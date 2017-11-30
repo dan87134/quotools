@@ -4,6 +4,14 @@ q <- rlang::quo(a * b + c * d)
 l <- qtls_walk_outline(q)
 l1 <- qtls_walk(q, qtls_outline_context())
 
+g <- qtls_node_tree(rlang::quo(a * b + c * d))
+DiagrammeR::render_graph(g)
+
+
+q2 <- rlang::quo(a * f1(b + c) + 34 + d)
+l1 <- qtls_walk(q2, qtls_outline_context())
+
+
 
 typeof(l)
 l[[1]]
