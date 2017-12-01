@@ -55,6 +55,7 @@ qtls_context <- function() {
 	context$lang_processing <- function(item)	{
 	}
 	context$post_loop <- function() {
+		NA
 	}
 	context$loop_start <- function() {
 	}
@@ -108,6 +109,9 @@ qtls_outline_context <- function() {
 	outline$loop_end <- function() {
 		outline$slevel <-  next_sibling(outline$slevel)
 	}
+	outline$post_loop <- function() {
+		outline$tbl
+	}
 	outline$slevel <- "1"
 	outline
 }
@@ -126,7 +130,6 @@ qtls_walk <- function(quosure, context) {
 		context$loop_end()
 	}
 	context$post_loop()
-	context$tbl
 }
 qtls_node_tree_context <- function()
 {
