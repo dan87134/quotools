@@ -46,29 +46,30 @@ qtls_walk_outline <-
 		qtbl
 	}
 
-qtls_outline <- function() {
-	outline <- new.env()
-	outline$tbl <- tibble::tibble()
-	class(outline$tbl) <-
-		c("qtls_outline", "qtls_tbl", class(outline$tbl))
-	outline$head_processing <- function(head) {
+qtls_context <- function() {
+	context <- new.env()
+	context$head_processing <- function(head) {
 	}
-	outline$expr_processing <- function(expr) {
+	context$expr_processing <- function(expr) {
 	}
-	outline$lang_processing <- function(item)	{
+	context$lang_processing <- function(item)	{
 	}
-	outline$post_loop <- function() {
+	context$post_loop <- function() {
 	}
-	outline$loop_start <- function() {
+	context$loop_start <- function() {
 	}
-	outline$loop_end <- function() {
+	context$loop_end <- function() {
 	}
-	outline
+	context
 }
 
 
 qtls_outline_context <- function() {
-	outline <- qtls_outline()
+	outline <- qtls_context()
+	outline$tbl <- tibble::tibble()
+	class(outline$tbl) <-
+		c("qtls_outline", "qtls_tbl", class(outline$tbl))
+
 	next_sibling <- function(level) {
 		re <- "\\d+$"
 		s <- as.integer(stringr::str_extract(level, re)) + 1L
