@@ -49,17 +49,22 @@ qtls_walk_outline <-
 qtls_context <- function() {
 	context <- new.env()
 	context$head_processing <- function(head) {
+
 	}
 	context$expr_processing <- function(expr) {
+
 	}
 	context$lang_processing <- function(item)	{
+
 	}
 	context$post_loop <- function() {
 		NA
 	}
 	context$loop_start <- function() {
+
 	}
 	context$loop_end <- function() {
+
 	}
 	context
 }
@@ -123,6 +128,7 @@ qtls_walk <- function(quosure, context) {
 	for (index in 1:length(tail)) {
 		item <- tail[[index]]
 		if (rlang::is_lang(item)) {
+			node <- qtls_walk(rlang::quo(!!item), context)
 			context$lang_processing(item)
 		} else {
 			context$expr_processing(item)
@@ -131,26 +137,78 @@ qtls_walk <- function(quosure, context) {
 	}
 	context$post_loop()
 }
+
+
 qtls_node_tree_context <- function()
 {
 	node_context <- qtls_context()
-
-	node_context$graph <- DiagrammeR::create_graph(
-		directed = FALSE
-	)
-
+	node_context$heads <- vector()
+	node_context$graph <- DiagrammeR::create_graph(directed = TRUE)
 	node_context$head_processing <- function(head) {
 		name <- rlang::expr_label(head)
-		node_context$graph <- DiagrammeR::add_node(node_context$graph, label = name)
+		node_context$graph <-
+			DiagrammeR::add_node(node_context$graph, label = name)
+		node_context$heads <-
+			c(node_context$heads,
+				DiagrammeR::get_last_nodes_created(node_context$graph))
+	}
+	node_context$loop_end <- function() {
 	}
 	node_context$post_loop <- function() {
+		len <- length(node_context$heads)
+		if (len > 1) {
+			node_context$graph <- DiagrammeR::add_edge(node_context$graph,
+																								 from = node_context$heads[[len]],
+																								 to = node_context$heads[[len - 1]])
+		}
+		node_context$heads <- node_context$heads[-len]
 		node_context$graph
+
+	}
+	node_context$expr_processing <- function(expr) {
+		name <- rlang::expr_label(expr)
+		node_context$node_count <- node_context$node_context + 1
+		node_context$graph <-
+			DiagrammeR::add_node(node_context$graph, label = name)
+		node_added <-
+			DiagrammeR::get_last_nodes_created(node_context$graph)[[1]]
+		node_context$graph <-
+			DiagrammeR::add_edge(node_context$graph,
+													 from = node_added,
+													 to = node_context$heads[length(node_context$heads)])
+		node_context
 	}
 	node_context
 }
 
-qtls_node_tree <- function(quosure) {
+
+qtls_node_tree2 <- function(quosure) {
 	qtls_walk(quosure, qtls_node_tree_context())
+}
+
+qtls_node_tree <- function(quosure) {
+	heads <- vector()
+	graph <- DiagrammeR::create_graph(directed = TRUE)
+	build_nodes <- function(quosure) {
+
+	head <- rlang::lang_head(quosure)
+	tail <- rlang::lang_tail(quosure)
+	graph <- DiagrammeR::add_node(graph, rlang::expr_label(head))
+	#context$head_processing(head)
+	for (index in 1:length(tail)) {
+		item <- tail[[index]]
+		if (rlang::is_lang(item)) {
+			node <- build_nodes(rlang::quo(!!item))
+			#context$lang_processing(item)
+		} else {
+			#context$expr_processing(item)
+		}
+		#context$loop_end()
+	}
+	#context$post_loop()
+	graph
+	}
+	build_nodes(quosure)
 }
 
 
