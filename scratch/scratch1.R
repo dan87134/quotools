@@ -10,9 +10,11 @@ DiagrammeR::render_graph(g)
 g <- qtls_node_tree(rlang::quo(a * b + c * d))
 DiagrammeR::render_graph(g, layout="tree")
 
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(DiagrammeR))
 g <- qtls_node_tree(rlang::quo(a * fn(b, c, 1:3) + c * (d + w)))
 DiagrammeR::render_graph(g, layout = "tree" )
-
 
 
 q2 <- rlang::quo(a * f1(b + c) + 34 + d)

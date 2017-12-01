@@ -189,15 +189,15 @@ qtls_node_tree2 <- function(quosure) {
 
 qtls_node_tree <- function(quosure) {
 	heads <- vector()
-	title <- rlang::f_lhs(quosure)
-	graph <- DiagrammeR::create_graph(directed = TRUE, graph_name = title)
+
+	graph <- DiagrammeR::create_graph(directed = TRUE)
 	gcontext <- new.env()
 	gcontext$graph <- graph
 	build_nodes <- function(quosure, ctx, parent = NA) {
 		head <- rlang::lang_head(quosure)
 		tail <- rlang::lang_tail(quosure)
 		ctx$graph <-
-			DiagrammeR::add_node(ctx$graph, label = rlang::expr_label(head))
+			DiagrammeR::add_node(ctx$graph, color = "green", type = typeof(head), label = rlang::expr_label(head))
 		if (!is.na(parent)) {
 			ctx$graph <- DiagrammeR::add_edge(ctx$graph,
 																				from = parent,
