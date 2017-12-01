@@ -153,6 +153,7 @@ qtls_node_tree_context <- function()
 				DiagrammeR::get_last_nodes_created(node_context$graph))
 	}
 	node_context$loop_end <- function() {
+
 	}
 	node_context$post_loop <- function() {
 		len <- length(node_context$heads)
@@ -188,27 +189,34 @@ qtls_node_tree2 <- function(quosure) {
 
 qtls_node_tree <- function(quosure) {
 	heads <- vector()
-	graph <- DiagrammeR::create_graph(directed = TRUE)
-	build_nodes <- function(quosure) {
-
-	head <- rlang::lang_head(quosure)
-	tail <- rlang::lang_tail(quosure)
-	graph <- DiagrammeR::add_node(graph, rlang::expr_label(head))
-	#context$head_processing(head)
-	for (index in 1:length(tail)) {
-		item <- tail[[index]]
-		if (rlang::is_lang(item)) {
-			node <- build_nodes(rlang::quo(!!item))
-			#context$lang_processing(item)
-		} else {
-			#context$expr_processing(item)
+	title <- rlang::f_lhs(quosure)
+	graph <- DiagrammeR::create_graph(directed = TRUE, graph_name = title)
+	gcontext <- new.env()
+	gcontext$graph <- graph
+	build_nodes <- function(quosure, ctx, parent = NA) {
+		head <- rlang::lang_head(quosure)
+		tail <- rlang::lang_tail(quosure)
+		ctx$graph <-
+			DiagrammeR::add_node(ctx$graph, label = rlang::expr_label(head))
+		if (!is.na(parent)) {
+			ctx$graph <- DiagrammeR::add_edge(ctx$graph,
+																				from = parent,
+																				to = ctx$graph$last_node)
 		}
-		#context$loop_end()
+		parent <- ctx$graph$last_node
+		for (index in 1:length(tail)) {
+			item <- tail[[index]]
+			if (rlang::is_lang(item)) {
+				node <- build_nodes(rlang::quo(!!item), ctx, parent)
+			} else {
+				ctx$graph <-
+					DiagrammeR::add_node(ctx$graph, label = rlang::expr_label(item))
+				child <- ctx$graph$last_node
+				ctx$graph <-
+					DiagrammeR::add_edge(ctx$graph, to = child, from = parent)
+			}
+		}
+		ctx$graph
 	}
-	#context$post_loop()
-	graph
-	}
-	build_nodes(quosure)
+	build_nodes(quosure, gcontext)
 }
-
-

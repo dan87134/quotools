@@ -11,7 +11,7 @@ g <- qtls_node_tree(rlang::quo(a * b + c * d))
 DiagrammeR::render_graph(g, layout="tree")
 
 g <- qtls_node_tree(rlang::quo(a * fn(b, c, 1:3) + c * (d + w)))
-DiagrammeR::render_graph(g, layout = "tree")
+DiagrammeR::render_graph(g, layout = "tree" )
 
 
 
