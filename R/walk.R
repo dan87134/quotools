@@ -133,22 +133,20 @@ qtls_walk <- function(quosure, context) {
 }
 qtls_node_tree_context <- function()
 {
+	node_context <- qtls_context()
 
-	tbl <- DiagrammeR::create_graph(
+	node_context$graph <- DiagrammeR::create_graph(
 		directed = FALSE
 	)
 
-	node_tree <- qtls_outline()
-	node_tree$head_processing <- function(head) {
+	node_context$head_processing <- function(head) {
 		name <- rlang::expr_label(head)
-		DiagrammeR::add_node(graph, label = name)
+		node_context$graph <- DiagrammeR::add_node(node_context$graph, label = name)
 	}
-	node_tree$expr_processing <- function(expr) {
-		name <- rlang::expr_label(expr)
+	node_context$post_loop <- function() {
+		node_context$graph
 	}
-	node_tree$lang_processing <- function(expr) {
-		name <- rlang::expr_label(expr)
-	}
+	node_context
 }
 
 qtls_node_tree <- function(quosure) {
