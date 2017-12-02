@@ -213,7 +213,7 @@ qtls_quo_tree <- function(quosure) {
 					DiagrammeR::add_node(ctx$graph,  label = rlang::expr_label(item))
 				child <- ctx$graph$last_node
 				ctx$graph <-
-					DiagrammeR::add_edge(ctx$graph, to = child, from = parent, rel = "child")
+					DiagrammeR::add_edge(ctx$graph, to = child, from = parent)
 			}
 		}
 		ctx$graph
