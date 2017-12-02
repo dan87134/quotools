@@ -187,7 +187,7 @@ qtls_node_tree2 <- function(quosure) {
 	qtls_walk(quosure, qtls_node_tree_context())
 }
 
-qtls_node_tree <- function(quosure) {
+qtls_quo_tree <- function(quosure) {
 	heads <- vector()
 
 	graph <- DiagrammeR::create_graph(directed = TRUE)
@@ -210,13 +210,23 @@ qtls_node_tree <- function(quosure) {
 				node <- build_nodes(rlang::quo(!!item), ctx, parent)
 			} else {
 				ctx$graph <-
-					DiagrammeR::add_node(ctx$graph, label = rlang::expr_label(item))
+					DiagrammeR::add_node(ctx$graph,  label = rlang::expr_label(item))
 				child <- ctx$graph$last_node
 				ctx$graph <-
-					DiagrammeR::add_edge(ctx$graph, to = child, from = parent)
+					DiagrammeR::add_edge(ctx$graph, to = child, from = parent, rel = "child")
 			}
 		}
 		ctx$graph
 	}
 	build_nodes(quosure, gcontext)
 }
+
+
+qtls_expr_tree <- function(expr) {
+	q <- rlang::enquo(expr)
+	qtls_quo_tree(q)
+}
+
+
+
+

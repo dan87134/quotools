@@ -1,13 +1,32 @@
 # scratch
 
 q <- rlang::quo(a * b + c * d)
+qtls_what_is_it(q)
+
+
+tf <- function(arg) {
+	q <- rlang::enquo(arg)
+	rhs <- rlang::f_rhs(q)
+	typeof(rhs)
+
+}
+
+tf(quo(a + b))
+
+tf(a + b)
+
+
+
 l <- qtls_walk_outline(q)
 l1 <- qtls_walk(q, qtls_outline_context())
 
-g <- qtls_node_tree(rlang::quo(a * b + c * d))
-DiagrammeR::render_graph(g)
+g <- qtls_quo_tree(rlang::quo(a * b + c * d))
+DiagrammeR::render_graph(g, layout = "tree")
 
-g <- qtls_node_tree(rlang::quo(a * b + c * d))
+g <- qtls_expr_tree(a * b + c * d)
+DiagrammeR::render_graph(g, layout = "tree")
+
+g <- qtls_quo_tree(rlang::quo(a * b + c * d))
 DiagrammeR::render_graph(g, layout="tree")
 
 
