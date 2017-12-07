@@ -79,15 +79,175 @@ change_to_minus <- function(q) {
 	if (car == rlang::sym("+")) {
 			rlang::mut_node_car(q2, rlang::sym("-"))
 	}
-	q2
 }
 
-q <- rlang::quo(a + b)
-q <- change_to_minus(q)
+
+change_to_minus2 <- function(q) {
+	expr <- rlang::get_expr(q)
+	#expr <- q[[2]]
+	car <- rlang::node_car(expr)
+	if (car == rlang::sym("+")) {
+		rlang::mut_node_car(expr, rlang::sym("-"))
+	}
+}
+# working, walks entire expression
+change_to_minus3 <- function(q) {
+	expr <- rlang::get_expr(q)
+	if(!rlang::is_lang(expr) & !rlang::is_node(expr)) return()
+	car <- rlang::node_car(expr)
+	if (car == rlang::sym("+")) {
+		rlang::mut_node_car(expr, rlang::sym("-"))
+	}
+	cdr <- rlang::node_cdr(expr)
+	carn <- rlang::node_car(cdr)
+	cdrn <- rlang::node_cdr(cdr)
+	change_to_minus3(carn)
+}
+
+q7 <- rlang::quo(a + (b * c) - d)
+qtls_walk_outline  (q7)
+
+
+a <- 2
+b <- 3
+c <- 4
+d <- 5
+q <- rlang::quo(a + (b + c) + d)
+change_to_minus3(q)
+
+# this sequence traverses tree
+expr <- rlang::get_expr(q)
+#expr <- q[[2]]
+car <- rlang::node_car(expr)
+if (car == rlang::sym("+")) {
+	rlang::mut_node_car(expr, rlang::sym("-"))
+}
+cdr <- rlang::node_cdr(expr)
+carn <- rlang::node_car(cdr)
+cdrn <- rlang::node_cdr(cdr)
+qtls_what_is_it(carn)
+qtls_what_is_it(cdrn)
+
+
+
+expr <- rlang::get_expr(carn)
+rlang::is_lang(expr)
+car <- rlang::node_car(expr)
+rlang::mut_node_car(expr, rlang::sym("-"))
+rlang::is_lang(expr)
+
+cdr <- rlang::node_cdr(expr)
+car <- rlang::node_car(expr)
+carn <- rlang::node_car(cdr)
+cdrn <- rlang::node_cdr(cdr)
+
+expr <- rlang::get_expr(cdrn)
+qtls_what_is_it(expr)
+rlang::is_lang(expr)
+car <- rlang::node_car(expr)
+cdr <- rlang::node_cdr(expr)
+#rlang::mut_node_car(expr, rlang::sym("-"))
+
+expr <- rlang::get_expr(car)
+rlang::is_lang(expr)
+car <- rlang::node_car(expr)
+cdr <- rlang::node_cdr(expr)
+#rlang::mut_node_car(expr, rlang::sym("-"))
+
+expr <- rlang::get_expr(cdr)
+rlang::is_node(expr)
+#rlang::mut_node_car(expr, rlang::sym("-"))
+cdr <- rlang::node_car(expr)
+
+
+q
+
+
+
+qtls_what_is_it(expr)
+rlang::is_lang(expr)
+
+
+
+expr <- rlang::get_expr(carn)
+
+qtls_what_is_it(car)
+rlang::is_lang(expr)
+expr <- rlang::get_expr(cdrn)
+rlang::is_lang(expr)
+typeof(expr)
+
+
+expr <- rlang::get_expr(carn)
+#test for completion
+rlang::is_lang(expr)
+
+rlang::is_symbol(expr)
+car <- rlang::node_car(expr)
+
+q
+
+
+cdr <- rlang::node_car(car)
+carn <- rlang::node_car(cdr)
+change_to_minus2(carn)
+
+
+
+change_to_minus2(q)
 rlang::eval_tidy(q)
 
+expr <- rlang::get_expr(q)
+cdr <- rlang::node_cdr(expr)
+cdr1 <- cdr[[1]]
+cdr2 <- cdr[[2]]
+
+carn <- rlang::node_car(cdr)
+cdrn <- rlang::node_cdr(cdr)
+typeof(cdrn)
+x2 <- rlang::get_expr(carn)
+car2 <- rlang::node_car(x2)
+cdr2 <- rlang::node_cdr(x2)
+
+q2 <- q[[2]]
+typeof(q2)
+q2e <- rlang::get_expr(q2)
+typeof(q2e)
+identical(q2, q2e)
+pryr::address(q2)
+pryr::address(q2e)
+
+car <- rlang::node_car(q[[2]])
+length(q[[2]])
+length(car)
+q2 <- q[[2]]
 
 
+q <- rlang::quo(a * b + c * d)
+x <- rlang::get_expr(q)
+ x[[1]]
+ x[[2]]
+ x[[3]]
+
+rlang::node_car(x)
+rlang::node_cdr(x)
+
+length(x)
+
+q2[[1]]
+q2_2 <- q2[[2]]
+typeof(q2_2)
+
+q2[[3]]
+
+
+
+str(car)
+
+
+q_1 <- q[[1]]
+q_2 <- q[[2]]
+q_3 <- q[[3]]
 
 
 
