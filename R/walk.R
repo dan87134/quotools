@@ -11,8 +11,7 @@ next_level <- function(level) {
 	stringr::str_c(level, ".1")
 }
 
-qtls_walk_outline <-
-	function(quosure,
+qtls_walk_outline <- function(quosure,
 					 qtbl = tibble::tibble(),
 					 slevel = "1") {
 		class(qtbl) <- c("qtls_outline", class(qtbl))
