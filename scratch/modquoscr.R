@@ -249,6 +249,22 @@ q_1 <- q[[1]]
 q_2 <- q[[2]]
 q_3 <- q[[3]]
 
+qtls_walk <- function(quosure) {
+	head <- rlang::lang_head(quosure)
+	tail <- rlang::lang_tail(quosure)
+	#context$head_processing(head)
+	for (index in 1:length(tail)) {
+		item <- tail[[index]]
+		if (rlang::is_lang(item)) {
+			node <- qtls_walk(rlang::quo(!!item))
+			#context$lang_processing(item)
+		} else {
+			#context$expr_processing(item)
+		}
+		#context$loop_end()
+	}
+	#context$post_loop()
+}
 
 
 q
