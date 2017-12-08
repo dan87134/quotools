@@ -24,8 +24,13 @@ qtls_what_is_it(e4)
 
 
 
-walk_cons <- function(q, level = 1, pass = 1) {
-	print(glue::glue("pass: {pass}  ------------------------------"))
+walk_cons <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
+	if(is.null(tbl$tbl)) {
+		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
+		tbl$pass <- 1
+	}
+
+	print(glue::glue("pass: {tbl$pass}  ------------------------------"))
 	print(glue::glue("q{level}: {qtls_what_is_it(q)}"))
 	if (level > 5)
 		return()
@@ -38,27 +43,46 @@ walk_cons <- function(q, level = 1, pass = 1) {
 		print(glue::glue("e{level}: {e}"))
 		print(glue::glue("e{level}: {qtls_what_is_it(e)}"))
 		cdr <- rlang::node_cdr(e)
+		car <- rlang::node_car(e)
 		print(glue::glue("cdr {level}: {cdr}"))
 		print(glue::glue("cdrw{level} {length(cdr)}: {qtls_what_is_it(cdr)}"))
+		print(glue::glue("car{level} {car}"))
+		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
 		for (index in 1:length(cdr)) {
 			print(glue::glue("cd_child {index} {qtls_what_is_it(cdr[[index]])}"))
 		}
 		car <- rlang::node_car(e)
+		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
+																										parent = list(parent),
+										 atom=list(car)))
 		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
+		parent = tbl$pass
 		for (index in 1:length(cdr)) {
+			tbl$pass <- tbl$pass + 1
 			if (rlang::is_lang(cdr[[index]])) {
-				pass <- pass + 1
-				walk_cons(cdr[[index]], level + 1, pass)
+				walk_cons(cdr[[index]], level + 1, tbl, parent)
 			} else {
+				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
+																														 parent = list(parent),
+																					atom = list(cdr[[index]])))
+				tbl$pass <- tbl$pass + 1
 				print(glue::glue("leaf: {cdr[[index]]} type: {typeof(cdr[[index]])}"))
-			}
+				}
 		}
 	}
+	tbl$tbl
 }
 
-
 q <- rlang::quo(a + b * c + d)
-walk_cons(q)
+t <- walk_cons(q)
+
+
+
+tbl <- new.env();
+tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
+
+dplyr::bind_rows(tbl$tbl, list(id=1, parent="asdf", atom=list("a", "n")))
+
 
 
 p <- rlang::parse_quosure("a + b * c + d")
