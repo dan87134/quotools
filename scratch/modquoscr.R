@@ -30,8 +30,8 @@ walk_cons <- function(q, level = 1, pass = 1) {
 	if (level > 5)
 		return()
 	if (!rlang::is_node(q)) {
-		if(rlang::is_formula(q)) {
-		e <- rlang::f_rhs(q)
+		if (rlang::is_formula(q)) {
+			e <- rlang::f_rhs(q)
 		} else {
 			e <- rlang::get_expr(q)
 		}
@@ -40,15 +40,17 @@ walk_cons <- function(q, level = 1, pass = 1) {
 		cdr <- rlang::node_cdr(e)
 		print(glue::glue("cdr {level}: {cdr}"))
 		print(glue::glue("cdrw{level} {length(cdr)}: {qtls_what_is_it(cdr)}"))
-		for(index in 1:length(cdr)) {
+		for (index in 1:length(cdr)) {
 			print(glue::glue("cd_child {index} {qtls_what_is_it(cdr[[index]])}"))
 		}
 		car <- rlang::node_car(e)
 		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
-		for(index in 1:length(cdr)) {
-			if(rlang::is_lang(cdr[[index]])) {
+		for (index in 1:length(cdr)) {
+			if (rlang::is_lang(cdr[[index]])) {
 				pass <- pass + 1
-			walk_cons(cdr[[index]], level + 1, pass)
+				walk_cons(cdr[[index]], level + 1, pass)
+			} else {
+				print(glue::glue("leaf: {cdr[[index]]} type: {typeof(cdr[[index]])}"))
 			}
 		}
 	}
