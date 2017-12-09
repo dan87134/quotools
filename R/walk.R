@@ -295,38 +295,57 @@ qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
 
 #' Title
 #' Builds a graph object using DiagrammeR for a tbl
-#' that list obj id's and their parent
+#' that list obj id's and their parent.
+#'
+#' Table at least an id, parent, and atom column
+#'
+#' The id column contains unique numeric identities for each row.
+#'
+#' The parent column contains the id of the node of that row's parent.
+#'
+#' The atom column contains text that tag's the nodes of the tree that
+#' DiagrameR will use.
+#'
 #' @param tbl
+#'
+#' @param root_node
 #'
 #' @return
 #' @export
 #'
 #' @examples
-qtls_plot_parent_child <- function(tbl) {
+#'
+qtls_plot_parent_child <- function(tbl, root_node = 1) {
 	graph <- DiagrammeR::create_graph(directed = TRUE)
 	context <- new.env()
 	context$graph <- graph
 	context$tbl <- tbl
 	build_graph <-
 		function(context,
-						 current_id = 1,
+						 current_id = root_node,
 						 parent_graph_id = 0) {
-			print(glue::glue("processing {current_id}"))
 			current_row <- dplyr::filter(context$tbl, id == current_id)
 			atom <- current_row$atom
+			# add a node for the row we are currently working on
 			context$graph <-
 				DiagrammeR::add_node(context$graph, label = atom)
+			# hang onto the id of the DiagrammeR node we just created in case
+			# the current row has children
 			current_graph_id <- context$graph$last_node
-			if (parent_graph_id != 0)  {
+			# root node does not have parent
+			if (parent_graph_id != 0) {
+				# add visual connection from parent to child
 				context$graph <-
 					DiagrammeR::add_edge(context$graph, to =
 															 	current_graph_id, from = parent_graph_id)
-
 			}
+			# if current row has children process those next
 			child_rows <- dplyr::filter(context$tbl, parent == current_id)
 			if (nrow(child_rows) != 0) {
 				for (index in 1:nrow(child_rows)) {
-					build_graph(context, as.numeric(child_rows[index, ]$id), current_graph_id)
+					build_graph(context,
+											as.numeric(child_rows[index,]$id),
+											current_graph_id)
 				}
 			}
 		}
@@ -334,54 +353,51 @@ qtls_plot_parent_child <- function(tbl) {
 	context$graph
 
 }
-# walk_carcdr_old <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
-# 	if(is.null(tbl$tbl)) {
-# 		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
-# 		tbl$pass <- 1
-# 	}
-#
-# 	print(glue::glue("pass: {tbl$pass}  ------------------------------"))
-# 	print(glue::glue("q{level}: {qtls_what_is_it(q)}"))
-# 	if (level > 5)
-# 		return()
-# 	if (!rlang::is_node(q)) {
-# 		if (rlang::is_formula(q)) {
-# 			e <- rlang::f_rhs(q)
-# 		} else {
-# 			e <- rlang::get_expr(q)
-# 		}
-# 		print(glue::glue("e{level}: {e}"))
-# 		print(glue::glue("e{level}: {qtls_what_is_it(e)}"))
-# 		cdr <- rlang::node_cdr(e)
-# 		car <- rlang::node_car(e)
-# 		print(glue::glue("cdr {level}: {cdr}"))
-# 		print(glue::glue("cdrw{level} {length(cdr)}: {qtls_what_is_it(cdr)}"))
-# 		print(glue::glue("car{level} {car}"))
-# 		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
-# 		for (index in 1:length(cdr)) {
-# 			print(glue::glue("cd_child {index} {qtls_what_is_it(cdr[[index]])}"))
-# 		}
-# 		car <- rlang::node_car(e)
-# 		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
-# 																												parent = list(parent),
-# 																												atom=list(car)))
-# 		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
-# 		parent = tbl$pass
-# 		for (index in 1:length(cdr)) {
-# 			tbl$pass <- tbl$pass + 1
-# 			if (rlang::is_lang(cdr[[index]])) {
-# 				walk_cons(cdr[[index]], level + 1, tbl, parent)
-# 			} else {
-# 				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
-# 																														 parent = list(parent),
-# 																														 atom = list(cdr[[index]])))
-# 				tbl$pass <- tbl$pass + 1
-# 				print(glue::glue("leaf: {cdr[[index]]} type: {typeof(cdr[[index]])}"))
-# 			}
-# 		}
-# 	}
-# 	tbl$tbl
-# }
-#
+
+qtls_graph_car_cdr_for_expression <- function(expr) {
+	q <- rlang::enquo(expr)
+	print(rlang::f_rhs(q))
+	t <- qtls_walk_carcdr(q)
+	qtls_plot_parent_child(t)
+}
+
+qtls_walk_table <- function(quosure,
+															qtbl = tibble::tibble(),
+															slevel = "1",
+															id = 1,
+															parent = 0) {
+	class(qtbl) <- c("qtls_outline", class(qtbl))
+	head <- rlang::lang_head(quosure)
+	tail <- rlang::lang_tail(quosure)
+	qtbl <- dplyr::bind_rows(
+		qtbl,
+		data.frame(
+			outline = slevel,
+			expr = rlang::expr_label(head),
+			parent = parent,
+			id = id,
+			atom = rlang::f_rhs(quosure)
+			stringsAsFactors = FALSE
+		)
+	)
+	slevel <- stringr::str_c(slevel, ".1")
+	for (index in 1:length(tail)) {
+		item <- tail[[index]]
+		if (rlang::is_lang(item)) {
+			qtbl <- qtls_walk_outline(rlang::quo(!!item), qtbl, slevel)
+		} else {
+			qtbl <- dplyr::bind_rows(
+				qtbl,
+				data.frame(
+					outline = slevel,
+					expr = rlang::expr_label(item),
+					stringsAsFactors = FALSE
+				)
+			)
+		}
+		slevel <- next_sibling(slevel)
+	}
+	qtbl
+}
 
 

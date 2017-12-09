@@ -86,5 +86,40 @@ remove.packages(DiagrammeR)
 rm(list = ls())
 
 
-q <- rlang::quo(a + b * c + d)
+q <- rlang::quo(a + (b * c) + d)
+
+q <- rlang::quo(a + (b * f1(c, x) + y))
+
+g <- qtls_expr_tree(a + (b * f1(c, x) + y * 2) + d)
+DiagrammeR::render_graph(g, layout = "tree")
+
+
+q <- rlang::quo(a + (b * f1(c, x) + y * 2 / uu + q * b + 0) + d)
+q <- rlang::quo(a + (b * f1(c, x) + y))
+q <- rlang::quo(a + b / c + d)
 t <- qtls_walk_carcdr(q)
+g <- qtls_plot_parent_child(t)
+DiagrammeR::render_graph(g, layout = "tree")
+
+t <- qtls_graph_car_cdr_for_expression(a + b * c + d)
+
+
+g <- qtls_graph_car_cdr_for_expression(a + b / c + d)
+DiagrammeR::render_graph(g, layout = "tree")
+
+g <- qtls_graph_car_cdr_for_expression(a + (b * f1(c, x) + y * 2 / uu + q * b + 0) + d)
+
+
+
+DiagrammeR::render_graph(g)
+
+c <- dplyr::filter(t, parent == 22220)
+
+nrow(t)
+t[1,]$atom
+
+gr <- DiagrammeR::create_graph(directed = TRUE)
+gr$last_node
+gr <- DiagrammeR::add_node(gr,
+										 label = "atom")
+
