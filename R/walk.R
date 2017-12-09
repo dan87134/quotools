@@ -182,11 +182,27 @@ qtls_node_tree_context <- function()
 }
 
 
-qtls_node_tree2 <- function(quosure) {
+#' Title
+#' Builds a graph object for DiagrammeR from an expression
+#' @param quosure
+#'
+#' @return
+#' @export
+#'
+#' @examples
+qtls_node_tree <- function(quosure) {
 	qtls_walk(quosure, qtls_node_tree_context())
 }
 
-qtls_quo_tree2 <- function(quosure) {
+#' Title
+#' Builds a graph object for DiagrammeR from a quosure
+#' @param quosure
+#'
+#' @return
+#' @export
+#'
+#' @examples
+qtls_quo_tree <- function(quosure) {
 	heads <- vector()
 
 	graph <- DiagrammeR::create_graph(directed = TRUE)
@@ -196,7 +212,9 @@ qtls_quo_tree2 <- function(quosure) {
 		head <- rlang::lang_head(quosure)
 		tail <- rlang::lang_tail(quosure)
 		ctx$graph <-
-			DiagrammeR::add_node(ctx$graph, color = "green", type = typeof(head), label = rlang::expr_label(head))
+			DiagrammeR::add_node(ctx$graph, color = "green",
+													 type = typeof(head),
+													 label = rlang::expr_label(head))
 		if (!is.na(parent)) {
 			ctx$graph <- DiagrammeR::add_edge(ctx$graph,
 																				from = parent,
@@ -227,6 +245,19 @@ qtls_expr_tree <- function(expr) {
 	qtls_quo_tree(q)
 }
 
+#' Title
+#' build a table of parent child relationship based
+#' on car/cdr's from a closure
+#' @param q
+#' @param level
+#' @param tbl
+#' @param parent
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' @export
 qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
 	if (is.null(tbl$tbl)) {
 		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
@@ -262,60 +293,95 @@ qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
 }
 
 
-qtls_plot_parent_child(tbl) {
-	current <= 0
+#' Title
+#' Builds a graph object using DiagrammeR for a tbl
+#' that list obj id's and their parent
+#' @param tbl
+#'
+#' @return
+#' @export
+#'
+#' @examples
+qtls_plot_parent_child <- function(tbl) {
+	graph <- DiagrammeR::create_graph(directed = TRUE)
+	context <- new.env()
+	context$graph <- graph
+	context$tbl <- tbl
+	build_graph <-
+		function(context,
+						 current_id = 1,
+						 parent_graph_id = 0) {
+			print(glue::glue("processing {current_id}"))
+			current_row <- dplyr::filter(context$tbl, id == current_id)
+			atom <- current_row$atom
+			context$graph <-
+				DiagrammeR::add_node(context$graph, label = atom)
+			current_graph_id <- context$graph$last_node
+			if (parent_graph_id != 0)  {
+				context$graph <-
+					DiagrammeR::add_edge(context$graph, to =
+															 	current_graph_id, from = parent_graph_id)
 
-}
-
-
-walk_carcdr_old <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
-	if(is.null(tbl$tbl)) {
-		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
-		tbl$pass <- 1
-	}
-
-	print(glue::glue("pass: {tbl$pass}  ------------------------------"))
-	print(glue::glue("q{level}: {qtls_what_is_it(q)}"))
-	if (level > 5)
-		return()
-	if (!rlang::is_node(q)) {
-		if (rlang::is_formula(q)) {
-			e <- rlang::f_rhs(q)
-		} else {
-			e <- rlang::get_expr(q)
-		}
-		print(glue::glue("e{level}: {e}"))
-		print(glue::glue("e{level}: {qtls_what_is_it(e)}"))
-		cdr <- rlang::node_cdr(e)
-		car <- rlang::node_car(e)
-		print(glue::glue("cdr {level}: {cdr}"))
-		print(glue::glue("cdrw{level} {length(cdr)}: {qtls_what_is_it(cdr)}"))
-		print(glue::glue("car{level} {car}"))
-		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
-		for (index in 1:length(cdr)) {
-			print(glue::glue("cd_child {index} {qtls_what_is_it(cdr[[index]])}"))
-		}
-		car <- rlang::node_car(e)
-		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
-																												parent = list(parent),
-																												atom=list(car)))
-		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
-		parent = tbl$pass
-		for (index in 1:length(cdr)) {
-			tbl$pass <- tbl$pass + 1
-			if (rlang::is_lang(cdr[[index]])) {
-				walk_cons(cdr[[index]], level + 1, tbl, parent)
-			} else {
-				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
-																														 parent = list(parent),
-																														 atom = list(cdr[[index]])))
-				tbl$pass <- tbl$pass + 1
-				print(glue::glue("leaf: {cdr[[index]]} type: {typeof(cdr[[index]])}"))
+			}
+			child_rows <- dplyr::filter(context$tbl, parent == current_id)
+			if (nrow(child_rows) != 0) {
+				for (index in 1:nrow(child_rows)) {
+					build_graph(context, as.numeric(child_rows[index, ]$id), current_graph_id)
+				}
 			}
 		}
-	}
-	tbl$tbl
-}
+	build_graph(context)
+	context$graph
 
+}
+# walk_carcdr_old <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
+# 	if(is.null(tbl$tbl)) {
+# 		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
+# 		tbl$pass <- 1
+# 	}
+#
+# 	print(glue::glue("pass: {tbl$pass}  ------------------------------"))
+# 	print(glue::glue("q{level}: {qtls_what_is_it(q)}"))
+# 	if (level > 5)
+# 		return()
+# 	if (!rlang::is_node(q)) {
+# 		if (rlang::is_formula(q)) {
+# 			e <- rlang::f_rhs(q)
+# 		} else {
+# 			e <- rlang::get_expr(q)
+# 		}
+# 		print(glue::glue("e{level}: {e}"))
+# 		print(glue::glue("e{level}: {qtls_what_is_it(e)}"))
+# 		cdr <- rlang::node_cdr(e)
+# 		car <- rlang::node_car(e)
+# 		print(glue::glue("cdr {level}: {cdr}"))
+# 		print(glue::glue("cdrw{level} {length(cdr)}: {qtls_what_is_it(cdr)}"))
+# 		print(glue::glue("car{level} {car}"))
+# 		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
+# 		for (index in 1:length(cdr)) {
+# 			print(glue::glue("cd_child {index} {qtls_what_is_it(cdr[[index]])}"))
+# 		}
+# 		car <- rlang::node_car(e)
+# 		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
+# 																												parent = list(parent),
+# 																												atom=list(car)))
+# 		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
+# 		parent = tbl$pass
+# 		for (index in 1:length(cdr)) {
+# 			tbl$pass <- tbl$pass + 1
+# 			if (rlang::is_lang(cdr[[index]])) {
+# 				walk_cons(cdr[[index]], level + 1, tbl, parent)
+# 			} else {
+# 				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
+# 																														 parent = list(parent),
+# 																														 atom = list(cdr[[index]])))
+# 				tbl$pass <- tbl$pass + 1
+# 				print(glue::glue("leaf: {cdr[[index]]} type: {typeof(cdr[[index]])}"))
+# 			}
+# 		}
+# 	}
+# 	tbl$tbl
+# }
+#
 
 
