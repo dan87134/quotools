@@ -1,15 +1,6 @@
 # for walking AST
 
-next_sibling <- function(level) {
-	re <- "\\d+$"
-	s <- as.integer(stringr::str_extract(level, re)) + 1L
 
-	stringr::str_replace(level, re, as.character(s))
-}
-
-next_level <- function(level) {
-	stringr::str_c(level, ".1")
-}
 # produces parse tree
 qtls_walk_outline <- function(quosure,
 					 qtbl = tibble::tibble(),
@@ -40,33 +31,32 @@ qtls_walk_outline <- function(quosure,
 					)
 				)
 			}
-			slevel <- next_sibling(slevel)
 		}
 		qtbl
 	}
 
-qtls_context <- function() {
-	context <- new.env()
-	context$head_processing <- function(head) {
-
-	}
-	context$expr_processing <- function(expr) {
-
-	}
-	context$lang_processing <- function(item)	{
-
-	}
-	context$post_loop <- function() {
-		NA
-	}
-	context$loop_start <- function() {
-
-	}
-	context$loop_end <- function() {
-
-	}
-	context
-}
+# qtls_context <- function() {
+# 	context <- new.env()
+# 	context$head_processing <- function(head) {
+#
+# 	}
+# 	context$expr_processing <- function(expr) {
+#
+# 	}
+# 	context$lang_processing <- function(item)	{
+#
+# 	}
+# 	context$post_loop <- function() {
+# 		NA
+# 	}
+# 	context$loop_start <- function() {
+#
+# 	}
+# 	context$loop_end <- function() {
+#
+# 	}
+# 	context
+# }
 
 
 qtls_outline_context <- function() {

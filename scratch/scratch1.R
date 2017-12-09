@@ -16,9 +16,35 @@ tf(quo(a + b))
 tf(a + b)
 
 
+
+
 q <- rlang::quo(a + b * c + d)
+expr <- rlang::get_expr(q)
+
+qs <- rlang::lang_standardise(expr)
+qs
+
 l <- qtls_walk_outline(q)
 l1 <- qtls_walk(q, qtls_outline_context())
+
+rlang::eval_tidy
+
+rlang:::overscope_eval_next
+
+lobstr::ast(f(x)(y))
+
+f <- function(a) {function(b) { -b*a}}
+
+f(3)(4)
+
+
+lobstr::ast(a + (b * c + fn(x, y, f2(a)) + (d + 2.01/3)))
+
+str(a + (b * c) + d)
+
+g <- qtls_quo_tree(rlang::quo(a + b * c + d))
+DiagrammeR::render_graph(g, layout = "tree")
+
 
 g <- qtls_quo_tree(rlang::quo(a * b + c * d))
 DiagrammeR::render_graph(g, layout = "tree")
@@ -26,10 +52,12 @@ DiagrammeR::render_graph(g, layout = "tree")
 g <- qtls_expr_tree(a * b + c * d)
 DiagrammeR::render_graph(g, layout = "tree")
 
-g <- qtls_quo_tree(rlang::quo(a * b + c * d))
+g <- qtls_quo_tree(rlang::quo(a * fn(b, c, 1:3) + c * (d + w)))
 DiagrammeR::render_graph(g, layout="tree")
 
-
+q <- rlang::quo(a + b * c + d)
+e <- rlang::get_expr(q)
+i <- rlang::expr_interp(e)
 
 
 suppressPackageStartupMessages(library(tidyverse))
@@ -87,8 +115,24 @@ remove.packages(DiagrammeR)
 
 rm(list = ls())
 
-
+q <- rlang::quo(a + b * c + d)
+g <- qtls_quo_tree(q)
+DiagrammeR::render_graph(g, layout="tree")
 q <- rlang::quo(a + (b * c) + d)
+
+t1 <- qtls_walk_outline(q)
+
+tail <- rlang::lang_tail(q)
+head <- rlang::lang_head(q)
+
+qtls_what_is_it(head)
+qtls_what_is_it(tail)
+
+g <- qtls_expr_tree(f(x)(y))
+DiagrammeR::render_graph(g, layout="tree")
+
+head2 <- rlang::lang_head(head)
+tail2 <- rlang::lang_tail(head)
 
 q <- rlang::quo(a + (b * f1(c, x) + y))
 
@@ -103,13 +147,20 @@ t <- qtls_walk_carcdr(q)
 g <- qtls_plot_parent_child(t)
 DiagrammeR::render_graph(g, layout = "tree")
 
-t <- qtls_graph_car_cdr_for_expression(a + b * c + d)
+q <- rlang::quo(f(a)(b))
+t <- qtls_walk_carcdr(q)
+
+<- qtls_graph_car_cdr_for_expression(a + b * c + d)
 
 
 g <- qtls_graph_car_cdr_for_expression(a + b / c + d)
 DiagrammeR::render_graph(g, layout = "tree")
 
 g <- qtls_graph_car_cdr_for_expression(a + (b * f1(c, x, x1, x, x2) + y * 2 / uu + q * b + 0) + d)
+DiagrammeR::render_graph(g, layout = "tree")
+
+
+g <- qtls_graph_car_cdr_for_expression(f(a)(b))
 DiagrammeR::render_graph(g, layout = "tree")
 
 q <- rlang::quo(a + b * c + d)
