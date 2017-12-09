@@ -112,12 +112,44 @@ DiagrammeR::render_graph(g, layout = "tree")
 g <- qtls_graph_car_cdr_for_expression(a + (b * f1(c, x, x1, x, x2) + y * 2 / uu + q * b + 0) + d)
 DiagrammeR::render_graph(g, layout = "tree")
 
-
+q <- rlang::quo(a + b * c + d)
+t <- qtls_walk_table(q)
 
 DiagrammeR::render_graph(g)
 
 c <- dplyr::filter(t, parent == 22220)
 
+f <- ~ d + b
+f
+
+1:0
+
+qa <- rlang::quo(a)
+q1 <- rlang::quo(1)
+ex <- rlang::get_expr(qa)
+qtls_what_is_it(ex)
+
+rlang::get_expr(q1)
+rlang::lang_head(qa)
+rlang::is_lang
+
+qab <- rlang::quo(a + b)
+qtls_what_is_it(qab)
+ex1 <- rlang::get_expr(qab)
+qtls_what_is_it(ex1)
+
+h <- rlang::lang_head(qab)
+rlang::get_expr(h)
+
+
+typeof(qa)
+qtls_what_is_it(qa)
+qtls_what_is_it(q1)
+rlang::lang_tail(qa)
+rlang::is_lang
+
+
+tibble::tr
 nrow(t)
 t[1,]$atom
 

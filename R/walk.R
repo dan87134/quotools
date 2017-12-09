@@ -10,7 +10,7 @@ next_sibling <- function(level) {
 next_level <- function(level) {
 	stringr::str_c(level, ".1")
 }
-
+# produces parse tree
 qtls_walk_outline <- function(quosure,
 					 qtbl = tibble::tibble(),
 					 slevel = "1") {
@@ -362,43 +362,63 @@ qtls_graph_car_cdr_for_expression <- function(expr) {
 	qtls_plot_parent_child(t)
 }
 
+#' Title
+#' Walks tree by following head/tail and produces tribble
+#' @param quosure
+#' @param parent_id
+#' @param order
+#' @param context
+#'
+#' @return
+#' @export
+#'
+#' @examples
 qtls_walk_table <- function(quosure,
-															qtbl = tibble::tibble(),
-															slevel = "1",
-															id = 1,
-															parent = 0) {
-	class(qtbl) <- c("qtls_outline", class(qtbl))
-	head <- rlang::lang_head(quosure)
-	tail <- rlang::lang_tail(quosure)
-	qtbl <- dplyr::bind_rows(
-		qtbl,
-		data.frame(
-			outline = slevel,
-			expr = rlang::expr_label(head),
-			parent = parent,
-			id = id,
-			atom = rlang::f_rhs(quosure),
-			stringsAsFactors = FALSE
-		)
-	)
-	slevel <- stringr::str_c(slevel, ".1")
-	for (index in 1:length(tail)) {
-		item <- tail[[index]]
-		if (rlang::is_lang(item)) {
-			qtbl <- qtls_walk_outline(rlang::quo(!!item), qtbl, slevel)
-		} else {
-			qtbl <- dplyr::bind_rows(
-				qtbl,
-				data.frame(
-					outline = slevel,
-					expr = rlang::expr_label(item),
-					stringsAsFactors = FALSE
-				)
-			)
-		}
-		slevel <- next_sibling(slevel)
+														parent_id = 0,
+														order = 1,
+														context = NA) {
+	if (is.na(context)) {
+		context = new.env()
+		context$pass = 1
+		context$qtbl <-
+			tibble::tribble(~id, ~parent, ~atom)
+		class(context$qtbl) <- c("qtls_outline", class(context$qtbl))
 	}
-	qtbl
+	expr <- rlang::get_expr(quosure)
+	id <- context$pass
+	if (!rlang::is_lang(expr)) {
+		context$qtbl <- dplyr::bind_rows(
+			context$qtbl,
+			data.frame(
+				parent = parent_id,
+				id = id,
+				atom = glue::glue("{expr}:{order}"),
+				stringsAsFactors = FALSE
+			)
+		)
+		context$pass <- context$pass + 1
+	} else {
+		head <- rlang::lang_head(quosure)
+		context$qtbl <- dplyr::bind_rows(
+			context$qtbl,
+			data.frame(
+				parent = parent_id,
+				id = id,
+				atom = glue::glue("{head}:{order}"),
+				stringsAsFactors = FALSE
+			)
+		)
+		context$pass <- context$pass + 1
+		tail <- rlang::lang_tail(quosure)
+		for (index in 1:length(tail)) {
+			item <- tail[[index]]
+			qtls_walk_table(rlang::quo(!!item),
+											id ,
+											index,
+											context)
+		}
+	}
+	context$qtbl
 }
 
 
