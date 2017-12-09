@@ -30,6 +30,8 @@ g <- qtls_quo_tree(rlang::quo(a * b + c * d))
 DiagrammeR::render_graph(g, layout="tree")
 
 
+
+
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(DiagrammeR))
 g <- qtls_node_tree(rlang::quo(a * fn(b, c, 1:3) + c * (d + w)))
@@ -107,7 +109,8 @@ t <- qtls_graph_car_cdr_for_expression(a + b * c + d)
 g <- qtls_graph_car_cdr_for_expression(a + b / c + d)
 DiagrammeR::render_graph(g, layout = "tree")
 
-g <- qtls_graph_car_cdr_for_expression(a + (b * f1(c, x) + y * 2 / uu + q * b + 0) + d)
+g <- qtls_graph_car_cdr_for_expression(a + (b * f1(c, x, x1, x, x2) + y * 2 / uu + q * b + 0) + d)
+DiagrammeR::render_graph(g, layout = "tree")
 
 
 

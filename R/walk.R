@@ -258,7 +258,7 @@ qtls_expr_tree <- function(expr) {
 #'
 #' @examples
 #' @export
-qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
+qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0, order=1) {
 	if (is.null(tbl$tbl)) {
 		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
 		tbl$pass <- 1
@@ -273,16 +273,17 @@ qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
 		car <- rlang::node_car(e)
 		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
 																												parent = list(parent),
-																												atom=list(car)))
+																												atom=list(glue::glue("{car}:{order}"))))
 		parent = tbl$pass
 		for (index in 1:length(cdr)) {
 			tbl$pass <- tbl$pass + 1
 			if (rlang::is_lang(cdr[[index]])) {
-				qtls_walk_carcdr(cdr[[index]], level + 1, tbl, parent)
+				qtls_walk_carcdr(cdr[[index]], level + 1, tbl, parent, order=index)
 			} else {
 				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
 																														 parent = list(parent),
-																														 atom = list(cdr[[index]])))
+																														 atom = list(
+																														 	glue::glue("{cdr[[index]]}:{index}"))))
 				tbl$pass <- tbl$pass + 1
 			}
 		}
@@ -376,7 +377,7 @@ qtls_walk_table <- function(quosure,
 			expr = rlang::expr_label(head),
 			parent = parent,
 			id = id,
-			atom = rlang::f_rhs(quosure)
+			atom = rlang::f_rhs(quosure),
 			stringsAsFactors = FALSE
 		)
 	)
