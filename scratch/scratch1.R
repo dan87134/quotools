@@ -16,7 +16,7 @@ tf(quo(a + b))
 tf(a + b)
 
 
-
+q <- rlang::quo(a + b * c + d)
 l <- qtls_walk_outline(q)
 l1 <- qtls_walk(q, qtls_outline_context())
 
@@ -82,18 +82,9 @@ a_graph %>% render_graph(layout = "tree")
 
 remove.packages(DiagrammeR)
 
-set_node_attrs
 
-														 																																								 																																			 																									1468065900, 1468065900, 1468065900), class = c("POSIXct", "POSIXt"
-															 																																								 																																			 																									), tzone = "UTC"), days = c(1042L, 1042L, 554L, 554L, 554L, 554L
-															 																																								 																																			 																									), Start_Date = structure(c(1420217880, 1420217880, 1420218180,
-															 																																								 																																			 																																							1420218180, 1420218180, 1420218180), class = c("POSIXct", "POSIXt"
-															 																																								 																																			 																																							), tzone = "UTC"), Stop_Date = structure(c(NA, NA, 1468065900,
-															 																																								 																																			 																																																												 1468065900, 1468065900, 1468065900), class = c("POSIXct", "POSIXt"
-															 																																								 																																			 																																																												 ), tzone = "UTC"), group = c("A", "B", "C", "D", "E", "F")), row.names = c(NA,
-															 																																								 																																			 																																																												 																																					 -6L), class = c("tbl_df", "tbl", "data.frame"), .Names = c("y",
-															 																																								 																																			 																																																												 																																					 																													 "Reg_Date", "Del_Date", "days", "Start_Date", "Stop_Date", "group"
-															 																																								 																																			 																																																												 																																					 ))
+rm(list = ls())
 
 
-
+q <- rlang::quo(a + b * c + d)
+t <- qtls_walk_carcdr(q)

@@ -1,2 +1,3 @@
 exportPattern("^qtls_[[:alpha:]]+")
-
+import(rlang)
+importFrom(magrittr,"%>%")

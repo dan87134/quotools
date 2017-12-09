@@ -26,7 +26,7 @@ qtls_what_is_it(e4)
 
 
 
-walk_cons <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
+walk_cons2 <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
 	if(is.null(tbl$tbl)) {
 		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
 		tbl$pass <- 1

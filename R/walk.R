@@ -186,7 +186,7 @@ qtls_node_tree2 <- function(quosure) {
 	qtls_walk(quosure, qtls_node_tree_context())
 }
 
-qtls_quo_tree <- function(quosure) {
+qtls_quo_tree2 <- function(quosure) {
 	heads <- vector()
 
 	graph <- DiagrammeR::create_graph(directed = TRUE)
@@ -221,11 +221,101 @@ qtls_quo_tree <- function(quosure) {
 }
 
 
+
 qtls_expr_tree <- function(expr) {
 	q <- rlang::enquo(expr)
 	qtls_quo_tree(q)
 }
 
+qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
+	if (is.null(tbl$tbl)) {
+		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
+		tbl$pass <- 1
+	}
+	if (!rlang::is_node(q)) {
+		if (rlang::is_formula(q)) {
+			e <- rlang::f_rhs(q)
+		} else {
+			e <- rlang::get_expr(q)
+		}
+		cdr <- rlang::node_cdr(e)
+		car <- rlang::node_car(e)
+		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
+																												parent = list(parent),
+																												atom=list(car)))
+		parent = tbl$pass
+		for (index in 1:length(cdr)) {
+			tbl$pass <- tbl$pass + 1
+			if (rlang::is_lang(cdr[[index]])) {
+				qtls_walk_carcdr(cdr[[index]], level + 1, tbl, parent)
+			} else {
+				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
+																														 parent = list(parent),
+																														 atom = list(cdr[[index]])))
+				tbl$pass <- tbl$pass + 1
+			}
+		}
+	} else {
+		print(glue::glue("end {q}"))
+	}
+	tbl$tbl
+}
+
+
+qtls_plot_parent_child(tbl) {
+	current <= 0
+
+}
+
+
+walk_carcdr_old <- function(q, level = 1, tbl = new.env() ,  parent = 0) {
+	if(is.null(tbl$tbl)) {
+		tbl$tbl <- tibble::tribble(~id, ~parent, ~atom)
+		tbl$pass <- 1
+	}
+
+	print(glue::glue("pass: {tbl$pass}  ------------------------------"))
+	print(glue::glue("q{level}: {qtls_what_is_it(q)}"))
+	if (level > 5)
+		return()
+	if (!rlang::is_node(q)) {
+		if (rlang::is_formula(q)) {
+			e <- rlang::f_rhs(q)
+		} else {
+			e <- rlang::get_expr(q)
+		}
+		print(glue::glue("e{level}: {e}"))
+		print(glue::glue("e{level}: {qtls_what_is_it(e)}"))
+		cdr <- rlang::node_cdr(e)
+		car <- rlang::node_car(e)
+		print(glue::glue("cdr {level}: {cdr}"))
+		print(glue::glue("cdrw{level} {length(cdr)}: {qtls_what_is_it(cdr)}"))
+		print(glue::glue("car{level} {car}"))
+		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
+		for (index in 1:length(cdr)) {
+			print(glue::glue("cd_child {index} {qtls_what_is_it(cdr[[index]])}"))
+		}
+		car <- rlang::node_car(e)
+		tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble(id = list(tbl$pass),
+																												parent = list(parent),
+																												atom=list(car)))
+		print(glue::glue("car{level}: {qtls_what_is_it(car)}"))
+		parent = tbl$pass
+		for (index in 1:length(cdr)) {
+			tbl$pass <- tbl$pass + 1
+			if (rlang::is_lang(cdr[[index]])) {
+				walk_cons(cdr[[index]], level + 1, tbl, parent)
+			} else {
+				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
+																														 parent = list(parent),
+																														 atom = list(cdr[[index]])))
+				tbl$pass <- tbl$pass + 1
+				print(glue::glue("leaf: {cdr[[index]]} type: {typeof(cdr[[index]])}"))
+			}
+		}
+	}
+	tbl$tbl
+}
 
 
 
