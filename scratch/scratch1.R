@@ -131,6 +131,26 @@ qtls_what_is_it(tail)
 g <- qtls_expr_tree(f(x)(y))
 DiagrammeR::render_graph(g, layout="tree")
 
+g <- qtls_graph_car_cdr_for_expression(f(x)(y))
+DiagrammeR::render_graph(g)
+
+q <- rlang::quo(f(x)(y))
+t3 <- qtls_walk_carcdr(q)
+
+q <- rlang::quo(f(x)(y))
+t4 <- qtls_walk_carcdr(q)
+
+q <- rlang::quo(f(x)())
+t4 <- qtls_walk_carcdr(q)
+
+
+
+lobstr::ast(f(x)())
+
+lobstr::ast(h(f(x)(y)))
+
+
+
 head2 <- rlang::lang_head(head)
 tail2 <- rlang::lang_tail(head)
 
@@ -147,10 +167,53 @@ t <- qtls_walk_carcdr(q)
 g <- qtls_plot_parent_child(t)
 DiagrammeR::render_graph(g, layout = "tree")
 
-q <- rlang::quo(f(a)(b))
-t <- qtls_walk_carcdr(q)
+q <- rlang::quo(f(a,z)(b,c))
+q <- rlang::quo(f(a,z)(b,c) + a)
+q <- rlang::quo(x * f(a,z)(b,c) + a)
+q <- rlang::quo(x + f(a,z)(b,c) * a)
+	q <- rlang::quo(a * b + c * d /f3(f2(a)(), x))
+	t <- qtls_walk_carcdr2(q)
+	g <- qtls_plot_parent_child(t)
+	DiagrammeR::render_graph(g, layout = "tree")
 
-<- qtls_graph_car_cdr_for_expression(a + b * c + d)
+
+qtls_what_is_it(q)
+
+rhs <- rlang::f_rhs(q)
+
+car <- rlang::node_car(rhs)
+cdr <- rlang::node_cdr(rhs)
+
+length(car)
+
+c
+
+qtls_what_is_it(q)
+
+
+rhs <- rlang::f_rhs(q)
+head <- rlang::lang_head(rhs)
+tail <- rlang::lang_tail(rhs)
+
+length(head)
+
+
+car <- rlang::node_car(q)
+cdr <- rlang::node_cdr(q)
+
+length(car)
+
+
+head
+
+g <- qtls_graph_car_cdr_for_expression(a + b * c + d)
+
+
+q <- rlang::quo(f(a)(b))
+t5 <- qtls_walk_carcdr2(q)
+g <- qtls_plot_parent_child(t5)
+DiagrammeR::render_graph(g, layout = "tree")
+
 
 
 g <- qtls_graph_car_cdr_for_expression(a + b / c + d)

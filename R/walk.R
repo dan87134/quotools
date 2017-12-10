@@ -269,6 +269,7 @@ qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0, order=
 			tbl$pass <- tbl$pass + 1
 			if (rlang::is_lang(cdr[[index]])) {
 				qtls_walk_carcdr(cdr[[index]], level + 1, tbl, parent, order=index)
+
 			} else {
 				tbl$tbl <- dplyr::bind_rows(tbl$tbl, tibble::tibble( id = list(tbl$pass),
 																														 parent = list(parent),
@@ -282,6 +283,98 @@ qtls_walk_carcdr <- function(q, level = 1, tbl = new.env() ,  parent = 0, order=
 	}
 	tbl$tbl
 }
+
+
+
+qtls_walk_carcdr2 <-
+	function(q,
+					 tbl = new.env() ,
+					 parent = 0,
+					 order = 1) {
+		if (is.null(tbl$tbl)) {
+			tbl$tbl <- tibble::tribble(~ id, ~ parent, ~ atom)
+			tbl$pass <- 1
+		}
+		if (!rlang::is_node(q)) {
+			if (rlang::is_formula(q)) {
+				e <- rlang::f_rhs(q)
+			} else {
+				e <- rlang::get_expr(q)
+			}
+			cdr <- rlang::node_cdr(e)
+			car <- rlang::node_car(e)
+			if (length(car) == 1) {
+				print(glue::glue("car one{car}"))
+				tbl$tbl <-
+					dplyr::bind_rows(tbl$tbl,
+													 tibble::tibble(
+													 	id = list(tbl$pass),
+													 	parent = list(parent),
+													 	atom = list(glue::glue("{car}:{order}"))
+													 ))
+				parent <- tbl$pass
+				tbl$pass = tbl$pass + 1
+			} else {
+				print("car more than one")
+				tbl$tbl <-
+					dplyr::bind_rows(tbl$tbl,
+													 tibble::tibble(
+													 	id = list(tbl$pass),
+													 	parent = list(parent),
+													 	atom = list(glue::glue("{car[[1]]}:{order}"))
+													 ))
+				parent <- tbl$pass
+				tbl$pass <- tbl$pass + 1
+
+				for (index in 2:length(car)) {
+					if (rlang::is_lang(car[[index]])) {
+						qtls_walk_carcdr2(car[[index]], tbl, parent, order = index)
+					} else {
+						tbl$tbl <-
+							dplyr::bind_rows(tbl$tbl,
+															 tibble::tibble(
+															 	id = list(tbl$pass),
+															 	parent = list(parent),
+															 	atom = list(glue::glue("{car[[index]]}:{index - 1}"))
+															 ))
+						#parent <- tbl$pass
+						tbl$pass <- tbl$pass + 1
+					}
+				}
+				#parent <- tbl$pass
+				tbl$tbl <-
+					dplyr::bind_rows(tbl$tbl,
+													 tibble::tibble(
+													 	id = list(tbl$pass),
+													 	parent = list(parent),
+													 	atom = list(glue::glue(":{length(car)}"))
+													 ))
+				parent <- tbl$pass
+				tbl$pass <- tbl$pass + 1
+
+			}
+			if (length(cdr) > 0) {
+				for (index in 1:length(cdr)) {
+					#tbl$pass <- tbl$pass + 1
+					if (rlang::is_lang(cdr[[index]])) {
+						qtls_walk_carcdr2(cdr[[index]], tbl, parent, order = index)
+					} else {
+						tbl$tbl <-
+							dplyr::bind_rows(tbl$tbl,
+															 tibble::tibble(
+															 	id = list(tbl$pass),
+															 	parent = list(parent),
+															 	atom = list(glue::glue("{cdr[[index]]}:{index}"))
+															 ))
+						tbl$pass <- tbl$pass + 1
+					}
+				}
+			}
+		} else {
+			print(glue::glue("end {q}"))
+		}
+		tbl$tbl
+	}
 
 
 #' Title
