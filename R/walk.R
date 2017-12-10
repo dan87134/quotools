@@ -306,15 +306,16 @@ qtls_walk_carcdr <-
 					 order = 1) {
 		if (is.null(tbl$tbl)) {
 			tbl$tbl <- tibble::tribble(~ id, ~ parent, ~ atom, ~ node)
-			# pass is incremented after each row is added
+			# pass is incremented after each row is added to tbl
 			tbl$pass <- 1
 		}
 		if (!rlang::is_node(q)) {
 			if (rlang::is_formula(q)) {
 				e <- rlang::f_rhs(q)
 			} else {
-				e <- rlang::get_expr(q)
+				e <- q
 			}
+			# get car/cdr, head/tail
 			cdr <- rlang::node_cdr(e)
 			car <- rlang::node_car(e)
 			if (length(car) == 1) {
@@ -427,8 +428,13 @@ qtls_plot_parent_child <- function(tbl, root_node = 1) {
 			current_row <- dplyr::filter(context$tbl, id == current_id)
 			atom <- current_row$atom
 			# add a node for the row we are currently working on
+			child_rows <- dplyr::filter(context$tbl, parent == current_id)
+			color = "blue"
+			if(nrow(child_rows) == 0) {
+				color = "green"
+			}
 			context$graph <-
-				DiagrammeR::add_node(context$graph, label = atom)
+				DiagrammeR::add_node(context$graph, label = atom, color = color)
 			# hang onto the id of the DiagrammeR node we just created in case
 			# the current row has children
 			current_graph_id <- context$graph$last_node
@@ -440,7 +446,6 @@ qtls_plot_parent_child <- function(tbl, root_node = 1) {
 															 	current_graph_id, from = parent_graph_id)
 			}
 			# if current row has children process those next
-			child_rows <- dplyr::filter(context$tbl, parent == current_id)
 			if (nrow(child_rows) != 0) {
 				for (index in 1:nrow(child_rows)) {
 					build_graph(context,
