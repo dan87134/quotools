@@ -305,7 +305,8 @@ qtls_walk_carcdr <-
 					 parent = 0,
 					 order = 1) {
 		if (is.null(tbl$tbl)) {
-			tbl$tbl <- tibble::tribble(~ id, ~ parent, ~ atom)
+			tbl$tbl <- tibble::tribble(~ id, ~ parent, ~ atom, ~ node)
+			# pass is incremented after each row is added
 			tbl$pass <- 1
 		}
 		if (!rlang::is_node(q)) {
@@ -322,7 +323,8 @@ qtls_walk_carcdr <-
 													 tibble::tibble(
 													 	id = list(tbl$pass),
 													 	parent = list(parent),
-													 	atom = list(glue::glue("{car}:{order}"))
+													 	atom = list(glue::glue("{car}:{order}")),
+													 	node = list(car)
 													 ))
 				parent <- tbl$pass
 				tbl$pass = tbl$pass + 1
@@ -332,7 +334,8 @@ qtls_walk_carcdr <-
 													 tibble::tibble(
 													 	id = list(tbl$pass),
 													 	parent = list(parent),
-													 	atom = list(glue::glue("{car[[1]]}:{order}"))
+													 	atom = list(glue::glue("{car[[1]]}:{order}")),
+													 							node = list(car[[1]])
 													 ))
 				parent <- tbl$pass
 				tbl$pass <- tbl$pass + 1
@@ -346,7 +349,8 @@ qtls_walk_carcdr <-
 															 tibble::tibble(
 															 	id = list(tbl$pass),
 															 	parent = list(parent),
-															 	atom = list(glue::glue("{car[[index]]}:{index - 1}"))
+															 	atom = list(glue::glue("{car[[index]]}:{index - 1}")),
+															 	node = list(car[[index]])
 															 ))
 						#parent <- tbl$pass
 						tbl$pass <- tbl$pass + 1
@@ -358,7 +362,8 @@ qtls_walk_carcdr <-
 													 tibble::tibble(
 													 	id = list(tbl$pass),
 													 	parent = list(parent),
-													 	atom = list(glue::glue(":{length(car)}"))
+													 	atom = list(glue::glue(":{length(car)}")),
+													 	node = list(NA)
 													 ))
 				parent <- tbl$pass
 				tbl$pass <- tbl$pass + 1
@@ -374,7 +379,8 @@ qtls_walk_carcdr <-
 															 tibble::tibble(
 															 	id = list(tbl$pass),
 															 	parent = list(parent),
-															 	atom = list(glue::glue("{cdr[[index]]}:{index}"))
+															 	atom = list(glue::glue("{cdr[[index]]}:{index}")),
+															 	node = list(cdr[[index]])
 															 ))
 						tbl$pass <- tbl$pass + 1
 					}
