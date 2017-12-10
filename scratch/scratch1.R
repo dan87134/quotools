@@ -172,7 +172,7 @@ q <- rlang::quo(f(a,z)(b,c) + a)
 q <- rlang::quo(x * f(a,z)(b,c) + a)
 q <- rlang::quo(x + f(a,z)(b,c) * a)
 	q <- rlang::quo(a * b + c * d /f3(f2(a)(), x))
-	t <- qtls_walk_carcdr2(q)
+	t <- qtls_walk_carcdr(q)
 	g <- qtls_plot_parent_child(t)
 	DiagrammeR::render_graph(g, layout = "tree")
 
