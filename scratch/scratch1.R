@@ -11,12 +11,30 @@ tf <- function(arg) {
 
 }
 
+q <- rlang::quo(a)
+rlang::is_lang(q)
+cdr <- rlang::node_cdr(q)
+rlang::is_lang(cdr)
+
+
+glue::glue("{stringr::str_c(1:2, collapse='')}")
+
+q <- rlang::quo(a + b)
+rhs <- rlang::f_rhs(q)
+rlang::get_expr(rhs)
+length(rhs)
+
+tibble::tibble(a = 1:2, b = c(1))
+
 tf(quo(a + b))
 
 tf(a + b)
 
 
+qtls_apply_carcdr(q, cdr_apply = function(car, cdr) { print(glue::glue("cdr_apply {car}:{cdr}"))})
 
+
+rlang::is_lang
 
 q <- rlang::quo(a + b * c + d)
 expr <- rlang::get_expr(q)
@@ -118,8 +136,18 @@ rm(list = ls())
 q <- rlang::quo(a + b * c + d)
 g <- qtls_quo_tree(q)
 DiagrammeR::render_graph(g, layout="tree")
-q <- rlang::quo(a + (b * c) + d)
 
+tx <- tibble::tibble(
+	c = 1:3,
+	d = c("asdf", "asdfrr", "rwea")
+)
+
+tx[1,]$c
+tx[1,"c"]
+
+
+
+q <- rlang::quo(a + (b * c) + d)
 t1 <- qtls_walk_outline(q)
 
 tail <- rlang::lang_tail(q)
@@ -176,7 +204,27 @@ q <- rlang::quo(x + f(a,z)(b,c) * a)
 	g <- qtls_plot_parent_child(t)
 	DiagrammeR::render_graph(g, layout = "tree")
 
+	q <- rlang::quo(foo <- a * b + c * d /f3(f2(a)(), x))
+	q <- rlang::quo(function(a,b) { a + b})
 
+lobstr::ast(function(a,b) { a + b})
+
+lobstr::ast(a * b + c * d /f3(f2(a)(), x))
+
+lobstr::ast(foo <- a * b + c * d /f3(f2(a)(), x))
+
+q1 <- rlang::quo(a * b + c * d)
+t1 <- qtls_walk_carcdr(q1)
+row <- t1[2,]
+
+car <- t1[2,]$car
+cdr <- t1[2,]$cdr
+position <- t1[2,]$position
+rlang::mut_node_car(car, rlang::node(rlang::sym("-"), cdr))
+
+
+
+q1
 qtls_what_is_it(q)
 
 rhs <- rlang::f_rhs(q)
@@ -209,8 +257,8 @@ head
 g <- qtls_graph_car_cdr_for_expression(a + b * c + d)
 
 
-q <- rlang::quo(f(a)(b))
-t5 <- qtls_walk_carcdr2(q)
+q <- rlang::quo(a + b *  c + d)
+t5 <- qtls_walk_carcdr(q)
 g <- qtls_plot_parent_child(t5)
 DiagrammeR::render_graph(g, layout = "tree")
 
@@ -271,4 +319,76 @@ gr <- DiagrammeR::create_graph(directed = TRUE)
 gr$last_node
 gr <- DiagrammeR::add_node(gr,
 										 label = "atom")
+
+q1 <- rlang::quo(a + b)
+t1 <- qtls_walk_carcdr(q1)
+
+car <- t1[[1,"car"]]
+cdr <- t1[[1,"cdr"]]
+str(car)
+typeof(car)
+
+
+lobstr::ast(car)
+
+cdr <- t1[1,]$cdr
+str(cdr)
+
+
+rlang::is_symbol(car)
+qtls_what_is_it(car)
+
+0:0
+
+
+
+rlang::mut_node_car(car, rlang::sym("-"))
+
+
+q3 <- rlang::quo(a + b)
+## this works ????? why????
+change_to_minus <- function(q) {
+	#q2 <- q[[2]]
+	q2 <- rlang::f_rhs(q)
+	car <- rlang::node_car(q2)
+	cdr <- rlang::node_cdr(q2)
+	mod_car <- function(car) {
+		if (rlang::is_symbol(car)) {
+			if (car == rlang::sym("+")) {
+				rlang::mut_node_car(q2, rlang::sym("-"))
+			}
+		}
+	}
+	mod_car(car)
+}
+change_to_minus(q3)
+
+q3 <- rlang::quo(a + b)
+rhs <- rlang::f_rhs(q3)
+car <- rlang::node_car(rhs)
+cc <- c(car = car)
+
+identical(car, cc$car)
+pryr::address(car)
+x <- cc$car
+pryr::address(x)
+ec <- new.env()
+ec$car <- car
+rlang::mut_node_car(car, rlang::sym("-"))
+
+
+ttt <- tibble::tribble(
+	~car,
+	car
+)
+ttt
+cc <- ttt[[1, "car"]]
+
+rlang::mut_node_car(cc, rlang::sym("-"))
+
+change_to_minus(q3)
+a <- 2
+b <- 3
+
+rlang::eval_tidy(q3)
 

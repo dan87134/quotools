@@ -288,7 +288,7 @@ qtls_expr_tree <- function(expr) {
 
 #' Title
 #' build a table of parent child relationship based
-#' on car/cdr's from a closure
+#' on car/cdr's from a quosure
 #' @param q
 #' @param level
 #' @param tbl
@@ -304,95 +304,117 @@ qtls_walk_carcdr <-
 					 tbl = new.env() ,
 					 parent = 0,
 					 order = 1) {
+		print("start")
 		if (is.null(tbl$tbl)) {
-			tbl$tbl <- tibble::tribble(~ id, ~ parent, ~ atom, ~ node)
+			tbl$tbl <- tibble::tribble(~ type, ~ id, ~ parent,
+																 ~ atom, ~ position)
 			# pass is incremented after each row is added to tbl
 			tbl$pass <- 1
 		}
-		if (!rlang::is_node(q)) {
-			if (rlang::is_formula(q)) {
-				e <- rlang::f_rhs(q)
-			} else {
-				e <- q
-			}
-			# get car/cdr, head/tail
-			cdr <- rlang::node_cdr(e)
-			car <- rlang::node_car(e)
-			if (length(car) == 1) {
-				tbl$tbl <-
-					dplyr::bind_rows(tbl$tbl,
-													 tibble::tibble(
-													 	id = list(tbl$pass),
-													 	parent = list(parent),
-													 	atom = list(glue::glue("{car}:{order}")),
-													 	node = list(car)
-													 ))
-				parent <- tbl$pass
-				tbl$pass = tbl$pass + 1
-			} else {
-				tbl$tbl <-
-					dplyr::bind_rows(tbl$tbl,
-													 tibble::tibble(
-													 	id = list(tbl$pass),
-													 	parent = list(parent),
-													 	atom = list(glue::glue("{car[[1]]}:{order}")),
-													 							node = list(car[[1]])
-													 ))
-				parent <- tbl$pass
-				tbl$pass <- tbl$pass + 1
-
-				for (index in 2:length(car)) {
-					if (rlang::is_lang(car[[index]])) {
-						qtls_walk_carcdr(car[[index]], tbl, parent, order = index)
-					} else {
-						tbl$tbl <-
-							dplyr::bind_rows(tbl$tbl,
-															 tibble::tibble(
-															 	id = list(tbl$pass),
-															 	parent = list(parent),
-															 	atom = list(glue::glue("{car[[index]]}:{index - 1}")),
-															 	node = list(car[[index]])
-															 ))
-						#parent <- tbl$pass
-						tbl$pass <- tbl$pass + 1
-					}
-				}
-				#parent <- tbl$pass
-				tbl$tbl <-
-					dplyr::bind_rows(tbl$tbl,
-													 tibble::tibble(
-													 	id = list(tbl$pass),
-													 	parent = list(parent),
-													 	atom = list(glue::glue(":{length(car)}")),
-													 	node = list(NA)
-													 ))
-				parent <- tbl$pass
-				tbl$pass <- tbl$pass + 1
-
-			}
-			if (length(cdr) > 0) {
-				for (index in 1:length(cdr)) {
-					if (rlang::is_lang(cdr[[index]])) {
-						qtls_walk_carcdr(cdr[[index]], tbl, parent, order = index)
-					} else {
-						tbl$tbl <-
-							dplyr::bind_rows(tbl$tbl,
-															 tibble::tibble(
-															 	id = list(tbl$pass),
-															 	parent = list(parent),
-															 	atom = list(glue::glue("{cdr[[index]]}:{index}")),
-															 	node = list(cdr[[index]])
-															 ))
-						tbl$pass <- tbl$pass + 1
-					}
-				}
-			}
+		if (rlang::is_formula(q)) {
+			e <- rlang::f_rhs(q)
 		} else {
-			print(glue::glue("end {q}"))
+			e <- q
+		}
+		# get car/cdr, head/tail
+		cdr <- rlang::node_cdr(e)
+		car <- rlang::node_car(e)
+		# length(car) == 1 is the typical car. It means it is a function
+		# and the cdr is a list of its arguments
+		if (length(car) == 1) {
+			print("car one...")
+			# add the function to the table
+			tbl$tbl <-
+				dplyr::bind_rows( tbl$tbl,
+												 tibble::tibble(
+												 	type = c("car"),
+												 	id = c(tbl$pass),
+												 	parent = c(parent),
+												 	atom = c(glue::glue("{rlang::get_expr(car)}:{order}")),
+												 	position = c(1)
+												 ))
+			print(glue::glue("pass1 {tbl$pass}"))
+			# this function is the parent of the cdr that follows
+			parent <- tbl$pass
+			# increment pass because row was added to table
+			tbl$pass <- tbl$pass + 1
+		} else {
+			# if we get to here it means the car has more than one item in its list
+			print("car multiple...")
+
+			tbl$tbl <-
+				dplyr::bind_rows( tbl$tbl,
+												 tibble::tibble(
+												 	type = c("car"),
+												 	id = c(tbl$pass),
+												 	parent = c(parent),
+												 	atom = c(glue::glue("{rlang::get_expr(car)}:{order}")),
+												 	position = c(1)
+												 ))
+			print(glue::glue("pass1 {tbl$pass}"))
+			parent <- tbl$pass
+			tbl$pass <- tbl$pass + 1
+
+			for (index in 2:length(car)) {
+				if (rlang::is_lang(car[[index]])) {
+					qtls_walk_carcdr(car[[index]], tbl, parent, order = index)
+				} else {
+					print("car mul2 ...")
+					tbl$tbl <-
+						dplyr::bind_rows( tbl$tbl,
+														 tibble::tibble(
+														 	type = c("car"),
+														 	id = c(tbl$pass),
+														 	parent = c(parent),
+														 	atom = c(glue::glue("{rlang::get_expr(car[[index]]}:{index - 1}")),
+														 	position = c(index - 1)
+														 ))
+					print(glue::glue("pass1 {tbl$pass}"))
+					#parent <- tbl$pass
+					tbl$pass <- tbl$pass + 1
+				}
+			}
+			#parent <- tbl$pass
+			print("car...")
+
+			tbl$tbl <-
+				dplyr::bind_rows( tbl$tbl,
+													tibble::tibble(
+														type = c("car"),
+														id = c(tbl$pass),
+												 	parent = c(parent),
+												 	atom = c(stringr_str_c(":{length(car)}")),
+												 	position = c(0)
+												 ))
+			print(glue::glue("pass1 {tbl$pass}"))
+			parent <- tbl$pass
+			tbl$pass <- tbl$pass + 1
+
+		}
+		if (length(cdr) > 0) {
+			for (index in 1:length(cdr)) {
+				if (rlang::is_lang(cdr[[index]])) {
+					qtls_walk_carcdr(cdr[[index]], tbl, parent, order = index)
+				} else {
+					print("cdr...")
+
+					tbl$tbl <-
+						dplyr::bind_rows(tbl$tbl,
+														 tibble::tibble(
+														 	type = c("cdr"),
+														 	id = c(tbl$pass),
+														 	parent = c(parent),
+														 	atom = c(glue::glue("{rlang::get_expr(cdr[[index]])}:{index}")),
+														 	position = c(index)
+
+														 ))
+					print(glue::glue("pass1 {tbl$pass}"))
+					tbl$pass <- tbl$pass + 1
+				}
+			}
 		}
 		tbl$tbl
 	}
-
 
 #' Title
 #' Builds a graph object using DiagrammeR for a tbl
@@ -525,4 +547,73 @@ qtls_walk_table <- function(quosure,
 	context$qtbl
 }
 
-
+#' Apply to quosue tree
+#' Applies a functions to car/cdr elements in quosure tree
+#' on car/cdr's from a quosure
+#' @param q
+#' @param level
+#' @param tbl
+#' @param parent
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' @export
+qtls_apply_carcdr <- function(q,
+															car_solo_apply = NA,
+															car_multi_apply = NA,
+															cdr_apply = NA,
+															context = NULL) {
+	print("=====================")
+	if (is.null(context)) {
+		print("make env")
+		context <- new.env()
+		if (!is.na(car_solo_apply)) {
+			context$car_solo_apply <- car_solo_apply
+		} else {
+			context$car_solo_apply <- function(car) {
+			}
+		}
+		if (!is.na(car_multi_apply)) {
+			context$car_multi_apply <- car_multi_apply
+		} else {
+			context$car_multi_apply <- function(car) {
+			}
+		}
+		if (!is.na(cdr_apply)) {
+			context$cdr_apply <- cdr_apply
+		} else {
+			context$cdr_apply <- function(car, cdr) {
+			}
+		}
+	}
+	if (rlang::is_formula(q)) {
+		e <- rlang::f_rhs(q)
+	} else {
+		e <- q
+	}
+	print(glue::glue("start {e}"))
+	# get car/cdr, head/tail
+	cdr <- rlang::node_cdr(e)
+	car <- rlang::node_car(e)
+	# length(car) == 1 is the typical car. It means it is a function
+	# and the cdr is a list of its arguments
+	if (length(car) == 1) {
+		# apply_solo_car
+		context$car_solo_apply(car)
+	} else {
+		# apply_multi_car
+		context$car_multi_apply(car)
+	}
+	# apply_cdr
+	if (!is.null(cdr)) {
+		context$cdr_apply(car, cdr)
+		for (index in 1:length(cdr)) {
+			next_cdr <- cdr[[index]]
+			if (rlang::is_lang(next_cdr)) {
+				qtls_apply_carcdr(next_cdr, context = context)
+			}
+		}
+	}
+}
