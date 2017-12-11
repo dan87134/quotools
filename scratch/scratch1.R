@@ -190,7 +190,7 @@ DiagrammeR::render_graph(g, layout = "tree")
 
 q <- rlang::quo(a + (b * f1(c, x) + y * 2 / uu + q * b + 0) + d)
 q <- rlang::quo(a + (b * f1(c, x) + y))
-q <- rlang::quo(a + b / c + d)
+q <- rlang::quo(a * b + c * d)
 t <- qtls_walk_carcdr(q)
 g <- qtls_plot_parent_child(t)
 DiagrammeR::render_graph(g, layout = "tree")
