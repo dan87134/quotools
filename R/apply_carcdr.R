@@ -21,19 +21,19 @@ qtls_apply_carcdr <- function(q,
 		if (!is.null(car_solo_apply)) {
 			context$car_solo_apply <- car_solo_apply
 		} else {
-			context$car_solo_apply <- function(car) {
+			context$car_solo_apply <- function(expr, car) {
 			}
 		}
 		if (!is.null(car_multi_apply)) {
 			context$car_multi_apply <- car_multi_apply
 		} else {
-			context$car_multi_apply <- function(car) {
+			context$car_multi_apply <- function(expr, car) {
 			}
 		}
 		if (!is.null(cdr_apply)) {
 			context$cdr_apply <- cdr_apply
 		} else {
-			context$cdr_apply <- function(car, cdr) {
+			context$cdr_apply <- function(expr, car, cdr) {
 			}
 		}
 	}
@@ -49,14 +49,15 @@ qtls_apply_carcdr <- function(q,
 	# and the cdr is a list of its arguments
 	if (length(car) == 1) {
 		# apply_solo_car
-		context$car_solo_apply(car)
+
+		context$car_solo_apply(e, car)
 	} else {
 		# apply_multi_car
-		context$car_multi_apply(car)
+		context$car_multi_apply(e, car)
 	}
 	# apply_cdr
 	if (!is.null(cdr)) {
-		context$cdr_apply(car, cdr)
+		context$cdr_apply(e, car, cdr)
 		for (index in 1:length(cdr)) {
 			next_cdr <- cdr[[index]]
 			if (rlang::is_lang(next_cdr)) {
