@@ -16,10 +16,9 @@ qtls_walk_carcdr <-
 					 tbl = new.env() ,
 					 parent = 0,
 					 order = 1) {
-		print("start")
 		if (is.null(tbl$tbl)) {
 			tbl$tbl <- tibble::tribble(~ type, ~ id, ~ parent,
-																 ~ atom, ~ position)
+																 ~ atom, ~ position, ~ expression)
 			# pass is incremented after each row is added to tbl
 			tbl$pass <- 1
 		}
@@ -34,7 +33,6 @@ qtls_walk_carcdr <-
 		# length(car) == 1 is the typical car. It means it is a function
 		# and the cdr is a list of its arguments
 		if (length(car) == 1) {
-			print("car one...")
 			# add the function to the table
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
@@ -43,17 +41,15 @@ qtls_walk_carcdr <-
 														id = c(tbl$pass),
 														parent = c(parent),
 														atom = c(glue::glue("{rlang::get_expr(car)}:{order}")),
-														position = c(1)
+														position = c(1),
+														expression = c(e)
 													))
-			print(glue::glue("pass1 {tbl$pass}"))
 			# this function is the parent of the cdr that follows
 			parent <- tbl$pass
 			# increment pass because row was added to table
 			tbl$pass <- tbl$pass + 1
 		} else {
 			# if we get to here it means the car has more than one item in its list
-			print("car multiple...")
-
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
 													tibble::tibble(
@@ -61,9 +57,9 @@ qtls_walk_carcdr <-
 														id = c(tbl$pass),
 														parent = c(parent),
 														atom = c(glue::glue("{rlang::get_expr(car)}:{order}")),
-														position = c(1)
+														position = c(1),
+														expression = c(e)
 													))
-			print(glue::glue("pass1 {tbl$pass}"))
 			parent <- tbl$pass
 			tbl$pass <- tbl$pass + 1
 
@@ -71,7 +67,6 @@ qtls_walk_carcdr <-
 				if (rlang::is_lang(car[[index]])) {
 					qtls_walk_carcdr(car[[index]], tbl, parent, order = index)
 				} else {
-					print("car mul2 ...")
 					tbl$tbl <-
 						dplyr::bind_rows( tbl$tbl,
 															tibble::tibble(
@@ -79,15 +74,13 @@ qtls_walk_carcdr <-
 																id = c(tbl$pass),
 																parent = c(parent),
 																atom = c(glue::glue("{rlang::get_expr(car[[index]]}:{index - 1}")),
-																position = c(index - 1)
+																position = c(index - 1),
+																expression = c(e)
 															))
-					print(glue::glue("pass1 {tbl$pass}"))
-					#parent <- tbl$pass
 					tbl$pass <- tbl$pass + 1
 				}
 			}
 			#parent <- tbl$pass
-			print("car...")
 
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
@@ -96,9 +89,9 @@ qtls_walk_carcdr <-
 														id = c(tbl$pass),
 														parent = c(parent),
 														atom = c(stringr_str_c(":{length(car)}")),
-														position = c(0)
+														position = c(0),
+														expression = c(e)
 													))
-			print(glue::glue("pass1 {tbl$pass}"))
 			parent <- tbl$pass
 			tbl$pass <- tbl$pass + 1
 
@@ -108,7 +101,6 @@ qtls_walk_carcdr <-
 				if (rlang::is_lang(cdr[[index]])) {
 					qtls_walk_carcdr(cdr[[index]], tbl, parent, order = index)
 				} else {
-					print("cdr...")
 
 					tbl$tbl <-
 						dplyr::bind_rows(tbl$tbl,
@@ -117,10 +109,9 @@ qtls_walk_carcdr <-
 														 	id = c(tbl$pass),
 														 	parent = c(parent),
 														 	atom = c(glue::glue("{rlang::get_expr(cdr[[index]])}:{index}")),
-														 	position = c(index)
-
+														 	position = c(index),
+														 	expression = c(e)
 														 ))
-					print(glue::glue("pass1 {tbl$pass}"))
 					tbl$pass <- tbl$pass + 1
 				}
 			}
