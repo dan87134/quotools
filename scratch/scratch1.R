@@ -254,10 +254,10 @@ length(car)
 
 head
 
-g <- qtls_graph_car_cdr_for_expression(a + b * c + d)
+g <- qtls_graph_car_cdr_for_expression(a * b + c * d)
 
 
-q <- rlang::quo(a + b *  c + d)
+q <- rlang::quo(a * b +  c * d)
 t5 <- qtls_walk_carcdr(q)
 g <- qtls_plot_parent_child(t5)
 DiagrammeR::render_graph(g, layout = "tree")
@@ -391,4 +391,20 @@ a <- 2
 b <- 3
 
 rlang::eval_tidy(q3)
+
+suppressPackageStartupMessages(library(tidyverse))
+df <- data.frame(col1 = c("a", "b", "c"), col2 = c("d", "a", "e"),
+								 stringsAsFactors = F)
+df <- dplyr::mutate_if(df,
+								is.character,
+								stringr::str_replace_all, pattern = "a", replacement = "x")
+df
+
+
+df <- data.frame(col1 = c("a", "b", "c"), col2 = c("d", "a", "e"), stringsAsFactors = F)
+
+df <-stringr::str_replace_all(as.list(df), "a", "x")
+
+class(df)
+typeof(df)
 
