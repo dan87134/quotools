@@ -322,10 +322,19 @@ ggplot2 to use non-Euclidian geometry for it's plots... just kidding :-).
 
 ### Bizzarro World Arithmetic again, Using Model
 
-Now we are going to use the model of R expressions that the `rlang` package uses
+Now we are going to use the model of R expressions that the `rlang` package uses,
 to implement bizzarro arithmetic. This example is going use some of the code
-from the files that can be downloaded for this project. The details of how the
-functions in this code works won't be explained until later in this tutorial.
+from the files that can be downloaded for this tutorial. The details of how the
+functions in this code work won't be explained in any detail 
+until later in this tutorial.
+
+What the barithmetic function does in this example is extract the
+model the `rlang` package uses for expressions from a quosure then searches it for
+all the aritmetic operators in it, that is +, -, *, and /, and flip each one to
+it's bizzarro world version.
+
+After the operators have been flipped barithmetic uses R to evaluate the
+quosure and produce a bizzarro result.
 
 ```{r}
 suppressPackageStartupMessages(library(quotools))
@@ -333,9 +342,13 @@ suppressPackageStartupMessages(library(tidyverse))
 
 barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
+	# get  rlang's model of q
 	model_table <- qtls_walk_carcdr(q)
+	# we only want to use car model objects
 	cars <- dplyr::filter(model_table, type == "car")
-	x <- purrr::walk(cars$expression, function(expr) {
+	# if the car is an arithmetic operation 
+	# we want to flip it to the bizzarro  world
+	purrr::walk(cars$expression, function(expr) {
 		car <- rlang::node_car(expr)
 		if (rlang::is_symbol(car)) {
 		 	if (car == rlang::sym("+")) {
@@ -356,6 +369,7 @@ barithmetic <- function(expr) {
 			}
 		}
 	})
+	# now evaluate the modified expression
 	rlang::eval_tidy(q)
 }
 # hmmm??
@@ -369,8 +383,12 @@ in the expression and then let R do the evaluation... that's what rlang::eval_ti
 does.
 
 The function `qtls_walk_carcdr` converts the model of an R expession that 
-the `rlang` uses into a tabular form that is easier to use when you are
-"programming on the language". Here is what that table looks like for the 
+the `rlang` packages uses into a tabular form that is easier to use when you are
+"programming on the language". It lets you apply a lot of your R table processing
+knowlege and minimizes the amount of "detail" knowledge of how to access
+parts of the `rlang` model of expressions.
+
+Here is what that table looks like for the 
 second bizzarro calculation we did.
 
 ```{r}
@@ -382,3 +400,18 @@ show_model_table <- function(expr) {
 show_model_table(3 * 4 + 1)
 
 ```
+
+Notice that this  table is represents a tree by using the `id` and `parent` 
+columns. The row with a 0 parent is the root of the tree.
+
+Some rows represent objects in the abstract syntax tree, or AST,
+that R uses to evaluate an expression and other rows represent intermediate
+objects used in building the AST.
+
+Don't worry if the model table doesn't make a lot of sense yet, it will covered 
+later in this tutorial.
+
+These examples don't even begin to cover all the ways and thing you can do by 
+*programming on the language" with quosures. But they do show that you can 
+access the data in a quosure and do what every you want to do with the 
+data inside of it.
