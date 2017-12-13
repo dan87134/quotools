@@ -97,6 +97,17 @@ qtls_walk_carcdr <-
 
 		}
 		if (length(cdr) > 0) {
+			tbl$tbl <-
+				dplyr::bind_rows(tbl$tbl,
+												 tibble::tibble(
+												 	type = c("cdr"),
+												 	id = c(tbl$pass),
+												 	parent = c(parent),
+												 	atom = c(glue::glue("{rlang::get_expr(cdr)}")),
+												 	position = c(NA),
+												 	expression = c(car)
+												 ))
+			tbl$pass <- tbl$pass + 1
 			for (index in 1:length(cdr)) {
 				if (rlang::is_lang(cdr[[index]])) {
 					qtls_walk_carcdr(cdr[[index]], tbl, parent, order = index)
