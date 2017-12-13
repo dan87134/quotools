@@ -50,17 +50,20 @@ In the R standard evaluation syntax in this example the
 programing ceremony is `tbl` repeated three times, the quotes and square
 brackets and even that one *dangling* comma. All of those things are necessary
 to get the filter to do what you want it to do but do nothing to clarify what
-you want the filter to do. 
+you want the filter to do. Get one of those pieces of ceremony wrong and only
+if you are lucky you will get an error... if you are unlucky the statement will
+just silently produce incorrect data.
 
-`filter` is circumvents the R standard evaluation of its second and third
-arguments in this example. It uses its own code to interpret the expressions `weight < 94` 
-and `length > 12` to produce the same results the R standard filter.
+`dplyr::filter` circumvents the R standard evaluation of its second and third
+arguments in this example. It interprets the expressions `weight < 94` 
+and `length > 12` with it's own code to associate them with `tbl` and produce the same results 
+as the R standard filter.
 
 Here dplyr::filter is using NSE to embed its own programing language for describing how to 
 choose rows in a table.
 
-One of the powerful things about using NSE like this is that in many, maybe most,
-cases you don't need to know how NSE works, or even that quosures exist, to make use
+One of the powerful things about using NSE like this is that in many cases, maybe most,
+you don't need to know how NSE works, or even that quosures exist, to make use
 of an embeded custom language. One of
 these cases is when you are using functions that use NSE, like `dplyr::filter`,
 from the command line to explore data.
@@ -75,7 +78,7 @@ where a good understanding of how NSE functions will be a big help.
 ##Language  Operational Components
 
 Language operational components isn't a term from Computer Science, it just, I 
-think, describes the parts of a language in terms of how program, for example written
+think, describes the parts of a language in terms of how a program, for example written
 in the R language, produces its results.
 
 *Programming on the Language* means inspecting, managing and sometimes 
@@ -106,7 +109,10 @@ R won't even try to figure out what you are trying to tell it. This happens
 because R checks that what you have typed complies with the syntax of R before
 it tries to do anything else.
 
-The syntax of a language an be documented in many ways. For R this is done
+This means that the custom language you are trying to embed inside an R 
+expression must comply with the syntax rules for R.
+
+The syntax of a language can be documented in many ways. For R this is done
 in Section 10 of the *R Language Definition* 
 https://cran.r-project.org/doc/manuals/r-release/R-lang.pdf .
 
@@ -116,25 +122,26 @@ directions. In R each one of these directions is called an expression. A big
 factor in how useful a programming language is for a particular task is
 its syntax. 
 
-However the computer cannot directly understand prose. It has to be translated 
+However the computer cannot directly understand prose of a programming langauge.
+It has to be translated 
 into a model the computer can understand directly. I'm going to give that 
 model the name *Expression Object Model*. Later you will see why I chose
 this name. The *Expression Object Model* is an in memory represenation of an
-expression from the syntax of the language and is built
+expression from the programing language and is built
 out of objects defined by the implementation of the language.
 
 There can be more than one *Expression Object Model* for a langauge. In R there is one
 defined in the c language implementation of R. But another is defined by the rlang 
 package... that's the one we'll be using in this tutorial.
 
-What can R do with an *Expression Object Model*. The main thing is to evaluate
+What can R do with an *Expression Object Model*? The main thing is to evaluate
 it. Evaluation produces a result that can be one or maybe more numbers. Keep
 in mind that a string, under the covers, is just a sequence of numbers. When you
 run an R program you get back the result of R evaluating the *Expession Object Model*
 of each of the expressions in that program.
 
 The evaluation of an *Expression Object Model* is where the context is involved.
-Programs aer mostly written with symbols that represent values of some kind.
+Programs are mostly written with symbols that represent values of some kind.
 
 For example in this trivial R program:
 
@@ -148,31 +155,109 @@ a + b
 find out what their values it. It does this by looking up those symbols in
 the context where that evaluation is being done.
 
-In R the context is called an environment. In fact in R the context may be
+In R this context is called an environment. In fact in R the context may be
 sequence of multiple environments that R goes through when it needs, or creates,
 the value of a symbol.
 
-So the big picture of what we just covered is that a person uses the syntax of R
-to write an expression which in turn translated into in memory model of that expression,
+The `rlang` package implements an *Expression Object Model* of R. A quosure contains
+that in memory repesentation of the module. In fact the `rlang` is a wrapper around
+the `c` language memory model that R uses to evaluate expressions.
+
+So a quosue gives you access to all three of these language operational
+components.
+
+The big picture of what we just covered is that a person uses the syntax of R
+to write an expression which in turn is translated into in memory model of that expression,
 called an *Expression Object Model*. Then R evaluates the *Expression Object Model*
 in a context and produces a result.
 
-And, again, a quosue gives you access to all three of these language operational
-components.
+# An Analog to Quosures
+
+So far the explanation of quosures and how they can be used to change how R interprets
+its syntax is a bit on the abstract side. A lot of R users are familar, to some
+extent, with html. html is a language, a markup language and it has language
+operational components just like R does. However in html it's a lot easier to 
+see the html's equivalent of an *Expression Object Model* in concrete terms.
+So let's do that.
+
+Here is a trival example of an HTML page. It's in `trivial.html` from the 
+files you can download for this tutorial.
+
+```
+<!DOCTYPE html>
+<title>A Tivial Example</title>
+This is an example of a valid web page.
+```
+
+At first glance you might think that this is not a valid web page because it seems
+to be missing many tags you might think are required. For example the is no
+`<html>` tag
+
+If you open the `trivial.html` file in your web browser it will display properly.
+However opening a file is not a test for html validity... no browsers check html for
+validity and will display almost anything given to them.
+
+However if you go to the W3C web page for checking the validity of html at
+https://validator.w3.org/#validate_by_input and check this example there you will
+find that the syntax, one of the operational components of html, of this page
+is correct.
+
+The syntax for html is defined on the W3C site at https://www.w3.org/TR/html51/ . If you 
+dig into it (please don't, it's pretty overwhelming :-)  you will find that many tags
+are optional, not required, for example the `<html>` tag https://www.w3.org/TR/html51/semantics.html#the-html-element
+
+So where might you have gotten the idea that the `html` tag and friends are required? It's
+probably becasue you more familar with the model component of html than with it's syntax.
+
+The W3C calls the model component of html the Document Object Model or DOM. That's where
+I got the idea of calling the model component of R expresions the
+*Expression Object Model*. It's located at
+https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109/ . 
+
+The DOM defines a number of objects that can be used to represent html in
+memory, just as the `rlang` package does.
+
+Here is an example of the tool that Chrome provides for exploring the DOM, the
+equivalent of the *Expression Object Model* for R.
+
+![Visualization of the DOM](htmlmodel.png)
+
+Notice that the *missing* tags seem to have appeared! Actually what you see are
+not tags, the are markers that represent objects used in the in an in memory model
+of html.
+
+There are some utilitarian differences between the W3C DOM and the `rlang` 
+packages. The W3C formally defines the model component of html and the `rlang`
+package does not. Also out there in 
+the wild that are a lot of tools for visually exploring the DOM. In R we don't have
+comprehensive tools  to visually explore a quosure.
+
+html, not the DOM, is designed to build a static web page. In classic html the
+only way to "liven" up a page by making it change, 
+except for some simpistic changes like a drop down menu,
+was to request the web site that
+originally served up the page to send a new page to the 
+browser.
+
+The way you make a dynamic web page, for example the way Shiny does, is to
+add some javascript to the page. That javascript examines and manipulates the
+DOM, not the html, for the page. When you use javascript like this you are "programming on the langauge", the hypertext markup language.
+
+With a quosure you can "program on the language" with the R langauge. The usage details are different but "programming on the langauge" in R is the same thing
+as using javascript with html to make dynamic web pages.
 
 ##Components in Action
 
 Before we go further and with only minimal explanation of the code, let's look
-at some examples of NSE functions that use the language operational components in
-action. These examples are only meant to show how things work, they won't have
-any use in real programs.
+at some examples of quosures that use the language operational components in
+action. These examples are only meant to show what can be accompished with quosures, the real programming details of how this is done is covered later in the tutorial.
 
 ###Complexity Measure, Using Syntax
 
 Here is a function that measures the complexity of an expression. It's metric is
-pretty simple, the longer the expression the more complext it is. However this 
+pretty simple, the longer the expression the more complex it is. However this 
 function needs to access the expression itself, *i.e.* the string the syntax allows,
-in order to implement this measure.
+in order to implement this measure and it uses a quosure to do this.
 
 ```{r complexity}
 complexity <- function(expr) {
@@ -195,25 +280,15 @@ it length but, of course, we could have done much more with it.
 
 However there is limitation here. It's not a deal breaker but in the general case
 it's pretty significant. The argument of complexity has to be a string that is
-allowed by R's syntax. For example you might like to have a function that evaluates
-a lisp expression, like this:
-
-```{r lisp, error=TRUE}
-lisp_eval <- function(lisp_expression) {
-	message("doing evaluation of lisp expression")
-	# make quosure of argument
-	q <- rlang::enquo(lisp_expression)
-	expr_string <- rlang::f_text(q)
-	# code that implements lisp evaluation of expr_string 
-}
-
-lisp_eval((+ a b))
+allowed by R's syntax. For example you might like use our `complexity` function to
+measure the complexity of a lisp expression like this:
+```{r, error=TRUE}
+complexity((+ a b))
 ```
 
-As you can see our lisp_eval function never even got to look at the lisp expression
-that was passed into lisp_eval. That's because the first thing R does when a function
-is called is to check that each argument is allow by the R language syntax. If one is
-not R doesn't go an further and just returns an error.
+As you can see our complexity function never even got to look at the lisp expression
+that was passed into it. That's because the first thing R does when a function
+is called is to check that each argument is allowed by the R language syntax. If one is not R doesn't go any further and just returns an error.
 
 ###Bizzaro World Arithmetic, Using Context
 
@@ -247,5 +322,63 @@ ggplot2 to use non-Euclidian geometry for it's plots... just kidding :-).
 
 ### Bizzarro World Arithmetic again, Using Model
 
+Now we are going to use the model of R expressions that the `rlang` package uses
+to implement bizzarro arithmetic. This example is going use some of the code
+from the files that can be downloaded for this project. The details of how the
+functions in this code works won't be explained until later in this tutorial.
 
+```{r}
+suppressPackageStartupMessages(library(quotools))
+suppressPackageStartupMessages(library(tidyverse))
 
+barithmetic <- function(expr) {
+	q <- rlang::enquo(expr)
+	model_table <- qtls_walk_carcdr(q)
+	cars <- dplyr::filter(model_table, type == "car")
+	x <- purrr::walk(cars$expression, function(expr) {
+		car <- rlang::node_car(expr)
+		if (rlang::is_symbol(car)) {
+		 	if (car == rlang::sym("+")) {
+				rlang::mut_node_car(expr, rlang::sym("-"))
+		 		return()
+			}
+		 	if (car == rlang::sym("-")) {
+				rlang::mut_node_car(expr, rlang::sym("+"))
+		 		return()
+			}
+		 	if (car == rlang::sym("*")) {
+				rlang::mut_node_car(expr, rlang::sym("/"))
+		 		return()
+			}
+		 	if (car == rlang::sym("/")) {
+				rlang::mut_node_car(expr, rlang::sym("*"))
+		 		return()
+			}
+		}
+	})
+	rlang::eval_tidy(q)
+}
+# hmmm??
+barithmetic(3 + 1)
+# yikes!!
+barithmetic(3 * 4 + 1)
+```
+
+Same bizzarro results, but this time we bizzarro'd all the arithmetic operators
+in the expression and then let R do the evaluation... that's what rlang::eval_tidy
+does.
+
+The function `qtls_walk_carcdr` converts the model of an R expession that 
+the `rlang` uses into a tabular form that is easier to use when you are
+"programming on the language". Here is what that table looks like for the 
+second bizzarro calculation we did.
+
+```{r}
+suppressPackageStartupMessages(library(quotools))
+show_model_table <- function(expr) {
+	q <- rlang::enquo(expr)
+	print(qtls_walk_carcdr(q))
+}
+show_model_table(3 * 4 + 1)
+
+```
