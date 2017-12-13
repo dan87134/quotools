@@ -1,0 +1,251 @@
+---
+title: "Quosures and Programming on the Language"
+author: "Dan Sullivan"
+date: "12/5/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Quosures enable *Programming on the Language*. This tutorial looks at how they
+do that.
+
+*Programming on the Language* is a way of circumventing R's standard evaluation of an
+expression and instead use your own code to interpret that expession and then use
+that interpretation to perform what ever operations you want. This is called
+non-standard evaluation or NSE. Its done to embded
+a custom programming langage inside of an R expression.
+
+An example
+of this is dplyr::filter which implements a simple programming language for
+choosing rows from a table that is more straightforward than the R programming language
+for doing that. For example:
+
+```{r simplefilter}
+suppressPackageStartupMessages(library(dplyr))
+tbl <- tibble::tribble(
+	~length, ~width, ~weight,
+	10, 20, 110,
+	15, 10, 87,
+	12, 30, 92,
+	15, 20, 99
+)
+# R language for a filter
+tbl[tbl["weight"] < 94 & tbl["length"] > 12, ]
+# dplyr language for a filter
+filter(tbl, weight < 94, length > 12)
+```
+
+The R standard evaluation syntax for a filter 
+has more of what is sometimes called *programming ceremony*
+than the dplyr syntax. Programming ceremony is the text you need
+to type into an expression that has little to do with telling R you what it is
+want expression to do.
+
+In the R standard evaluation syntax in this example the
+programing ceremony is `tbl` repeated three times, the quotes and square
+brackets and even that one *dangling* comma. All of those things are necessary
+to get the filter to do what you want it to do but do nothing to clarify what
+you want the filter to do. 
+
+`filter` is circumvents the R standard evaluation of its second and third
+arguments in this example. It uses its own code to interpret the expressions `weight < 94` 
+and `length > 12` to produce the same results the R standard filter.
+
+Here dplyr::filter is using NSE to embed its own programing language for describing how to 
+choose rows in a table.
+
+One of the powerful things about using NSE like this is that in many, maybe most,
+cases you don't need to know how NSE works, or even that quosures exist, to make use
+of an embeded custom language. One of
+these cases is when you are using functions that use NSE, like `dplyr::filter`,
+from the command line to explore data.
+
+But if you are using NSE functions in a script or you are implementing your own
+custom language then you will need to understand how NSE functions work.
+
+And even if you are using it from the command line you may run into edge cases
+where a good understanding of how NSE functions will be a big help.
+
+
+##Language  Operational Components
+
+Language operational components isn't a term from Computer Science, it just, I 
+think, describes the parts of a language in terms of how program, for example written
+in the R language, produces its results.
+
+*Programming on the Language* means inspecting, managing and sometimes 
+manipulating the language operational components of the R. Quosuers
+give you access to these components.
+
+In R, and most programming langauges, you will find three operational components;
+Syntax, model and context. Let's take a look at what each is before we go into 
+details.
+
+The syntax of a language determines what you are allowed to type when you
+write a program. In R, for example you can type
+
+```{r allowed}
+a <- 2
+b <- 3
+# this is allowed in an R program
+a + b
+```
+and R can understand it and process it. But if you type
+
+```{r notallowed, error=TRUE}
+# this is not allowed in an R program
++ a b
+```
+
+R won't even try to figure out what you are trying to tell it. This happens
+because R checks that what you have typed complies with the syntax of R before
+it tries to do anything else.
+
+The syntax of a language an be documented in many ways. For R this is done
+in Section 10 of the *R Language Definition* 
+https://cran.r-project.org/doc/manuals/r-release/R-lang.pdf .
+
+The syntax of a language like R is meant to give people a familiar way to express
+what they want a computer to do by writing an English prose-like list of 
+directions. In R each one of these directions is called an expression. A big
+factor in how useful a programming language is for a particular task is
+its syntax. 
+
+However the computer cannot directly understand prose. It has to be translated 
+into a model the computer can understand directly. I'm going to give that 
+model the name *Expression Object Model*. Later you will see why I chose
+this name. The *Expression Object Model* is an in memory represenation of an
+expression from the syntax of the language and is built
+out of objects defined by the implementation of the language.
+
+There can be more than one *Expression Object Model* for a langauge. In R there is one
+defined in the c language implementation of R. But another is defined by the rlang 
+package... that's the one we'll be using in this tutorial.
+
+What can R do with an *Expression Object Model*. The main thing is to evaluate
+it. Evaluation produces a result that can be one or maybe more numbers. Keep
+in mind that a string, under the covers, is just a sequence of numbers. When you
+run an R program you get back the result of R evaluating the *Expession Object Model*
+of each of the expressions in that program.
+
+The evaluation of an *Expression Object Model* is where the context is involved.
+Programs aer mostly written with symbols that represent values of some kind.
+
+For example in this trivial R program:
+
+```{r trival}
+a <- 2
+b <- 3
+a + b
+```
+
+`a` and `b` are symbols. When R goes to sum up those two symbols it has to somehow
+find out what their values it. It does this by looking up those symbols in
+the context where that evaluation is being done.
+
+In R the context is called an environment. In fact in R the context may be
+sequence of multiple environments that R goes through when it needs, or creates,
+the value of a symbol.
+
+So the big picture of what we just covered is that a person uses the syntax of R
+to write an expression which in turn translated into in memory model of that expression,
+called an *Expression Object Model*. Then R evaluates the *Expression Object Model*
+in a context and produces a result.
+
+And, again, a quosue gives you access to all three of these language operational
+components.
+
+##Components in Action
+
+Before we go further and with only minimal explanation of the code, let's look
+at some examples of NSE functions that use the language operational components in
+action. These examples are only meant to show how things work, they won't have
+any use in real programs.
+
+###Complexity Measure, Using Syntax
+
+Here is a function that measures the complexity of an expression. It's metric is
+pretty simple, the longer the expression the more complext it is. However this 
+function needs to access the expression itself, *i.e.* the string the syntax allows,
+in order to implement this measure.
+
+```{r complexity}
+complexity <- function(expr) {
+	# make a quosure of the expression
+	q <- rlang::enquo(expr)
+	# since a quosure mimics a formula we can get it's text
+	stringr::str_length(rlang::f_text(q))
+}
+
+complexity(a)
+complexity(a + b)
+```
+
+So our `complexity` function shows that `a + b` is five times more  complicated
+than `a` :-) .
+
+The important thing shown here is that we were able to access the argument of `complexity`
+as a string and then process that string any way we please. In this case we just got
+it length but, of course, we could have done much more with it.
+
+However there is limitation here. It's not a deal breaker but in the general case
+it's pretty significant. The argument of complexity has to be a string that is
+allowed by R's syntax. For example you might like to have a function that evaluates
+a lisp expression, like this:
+
+```{r lisp, error=TRUE}
+lisp_eval <- function(lisp_expression) {
+	message("doing evaluation of lisp expression")
+	# make quosure of argument
+	q <- rlang::enquo(lisp_expression)
+	expr_string <- rlang::f_text(q)
+	# code that implements lisp evaluation of expr_string 
+}
+
+lisp_eval((+ a b))
+```
+
+As you can see our lisp_eval function never even got to look at the lisp expression
+that was passed into lisp_eval. That's because the first thing R does when a function
+is called is to check that each argument is allow by the R language syntax. If one is
+not R doesn't go an further and just returns an error.
+
+###Bizzaro World Arithmetic, Using Context
+
+In this example we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
+Bizzaro World add means subtract, multiple means divide and *vica versa*.
+
+```{r bizzarro}
+barithmetic <- function(expr) {
+	q <- rlang::enquo(expr)
+	context <- new.env()
+	# change arithmetic function definition to bizzarro arithmetic
+	context$`+` <- function(x,y) {x - y}
+	context$`-` <- function(x,y) {x + y}
+	context$`*` <- function(x,y) {x / y}
+	context$`/` <- function(x,y) {x * y}
+	# to the evaluation in Bizzarro World
+	rlang::eval_tidy(q, context)
+}
+
+calc1 <- barithmetic(3 + 1)
+# Hmmmm???
+calc1
+calc2 <- barithmetic(3 * 4 + 1)
+#yikes!!!!
+calc2
+```
+
+Here, by manipulating the context component we were able to 
+substitute bizzarro arithmetic for regular arithmetic. Next we're going to change
+ggplot2 to use non-Euclidian geometry for it's plots... just kidding :-).
+
+### Bizzarro World Arithmetic again, Using Model
+
+
+
