@@ -20,7 +20,7 @@
 #'
 #' @examples
 #'
-qtls_plot_parent_child <- function(tbl, root_node = 1) {
+qtls_plot_ast <- function(tbl, root_node = 1) {
 	graph <- DiagrammeR::create_graph(directed = TRUE)
 	context <- new.env()
 	context$graph <- graph
@@ -37,6 +37,7 @@ qtls_plot_parent_child <- function(tbl, root_node = 1) {
 			if(nrow(child_rows) == 0) {
 				color = "green"
 			}
+			label <- stringr::str_replace_all(label, "\"", "|")
 			context$graph <-
 				DiagrammeR::add_node(context$graph, label = label, color = color)
 			# hang onto the id of the DiagrammeR node we just created in case
