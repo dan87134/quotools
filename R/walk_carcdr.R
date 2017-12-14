@@ -18,8 +18,8 @@ qtls_walk_carcdr <-
 					 order = 1) {
 		if (is.null(tbl$tbl)) {
 			tbl$tbl <- tibble::tribble(~ node, ~ id, ~ parent,
-																 ~ atom, ~ position, ~ expression,
-																 ~ typeof_node, ~ node_mimics)
+																 ~ label, ~ position, ~ expression,
+																 ~ typeof_carcdr, ~ carcdr_mimics)
 			# pass is incremented after each row is added to tbl
 			tbl$pass <- 1
 		}
@@ -42,18 +42,18 @@ qtls_walk_carcdr <-
 		# and the cdr is a list of its arguments
 		if (length(car) == 1) {
 			# add the function to the table
+			label <- rlang::get_expr(car)
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
 													tibble::tibble(
 														node = c("car"),
 														id = c(tbl$pass),
 														parent = c(parent),
-														atom = c(glue::glue("{rlang::get_expr(car)}:{order}")),
-														typeof_atom = c(typeof(car)),
+														label = c(glue::glue("{label}:{order}")),
 														position = c(1),
 														expression = c(e),
-														typeof_node = c(typeof(car)),
-														node_mimics = list(qtls_what_is_it(car))
+														typeof_carcdr = c(typeof(car)),
+														carcdr_mimics = list(qtls_what_is_it(car))
 													))
 			# this function is the parent of the cdr that follows
 			parent <- tbl$pass
@@ -61,18 +61,18 @@ qtls_walk_carcdr <-
 			tbl$pass <- tbl$pass + 1
 		} else {
 			# if we get to here it means the car has more than one item in its list
+			expr <- rlang::get_expr(car)
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
 													tibble::tibble(
 														node = c("car"),
 														id = c(tbl$pass),
 														parent = c(parent),
-														atom = c(glue::glue("{rlang::get_expr(car)}:{order}")),
-														typeof_atom = c(typeof(cdr)),
+														label = c(glue::glue("{label}:{order}")),
 														position = c(1),
 														expression = c(e),
-														typeof_node = c(typeof(car)),
-														node_mimics = list(qtls_what_is_it(car))
+														typeof_carcdr = c(typeof(car)),
+														carcdr_mimics = list(qtls_what_is_it(car))
 													))
 			parent <- tbl$pass
 			tbl$pass <- tbl$pass + 1
@@ -81,24 +81,22 @@ qtls_walk_carcdr <-
 				if (rlang::is_lang(car[[index]])) {
 					qtls_walk_carcdr(car[[index]], tbl, parent, order = index)
 				} else {
-					atom <-
-					tbl$tbl <- car[[index]]
+					label <- rlang::get_expr(car[[index]])
+						tbl$tbl <-
 						dplyr::bind_rows( tbl$tbl,
 															tibble::tibble(
 																node = c("car"),
 																id = c(tbl$pass),
 																parent = c(parent),
-																atom = c(glue::glue("{rlang::get_expr(atom}:{index - 1}")),
-																typeof_atom = c(typeof(atom)),
+																label = c(glue::glue("{label}:{index - 1}")),
 																position = c(index - 1),
 																expression = c(e),
-																typeof_node = c(typeof(car)),
-																node_mimics = list(qtls_what_is_it(car))
+																typeof_carcdr = c(typeof(car)),
+																carcdr_mimics = list(qtls_what_is_it(car))
 															))
 					tbl$pass <- tbl$pass + 1
 				}
 			}
-			#parent <- tbl$pass
 
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
@@ -106,50 +104,34 @@ qtls_walk_carcdr <-
 														node = c("car"),
 														id = c(tbl$pass),
 														parent = c(parent),
-														atom = c(stringr_str_c(":{length(car)}")),
-														typeof_atom = NA,
+														label = c(stringr_str_c(":{length(car)}")),
 														position = c(0),
 														expression = c(e),
-														typeof_node = c(typeof(car)),
-														node_mimics = list(qtls_what_is_it(car))
+														typeof_carcdr = c(typeof(car)),
+														carcdr_mimics = list(qtls_what_is_it(car))
 													))
 			parent <- tbl$pass
 			tbl$pass <- tbl$pass + 1
 
 		}
 		if (length(cdr) > 0) {
-			atom <- cdr
-			tbl$tbl <-
-				dplyr::bind_rows(tbl$tbl,
-												 tibble::tibble(
-												 	node = c("cdr"),
-												 	id = c(tbl$pass),
-												 	parent = c(parent),
-												 	atom = c(glue::glue("{rlang::get_expr(atom)}")),
-												 	typeof_atom = c(typeof(atom)),
-												 	position = c(NA),
-												 	expression = c(car),
-												 	typeof_node = c(typeof(cdr)),
-												 	node_mimics = list(qtls_what_is_it(cdr))
-												 ))
-			tbl$pass <- tbl$pass + 1
 			for (index in 1:length(cdr)) {
 				if (rlang::is_lang(cdr[[index]])) {
 					qtls_walk_carcdr(cdr[[index]], tbl, parent, order = index)
 				} else {
-					atom <- cdr[[index]]
+					cdr_child <- cdr[[index]]
+					label <- rlang::get_expr(cdr_child)
 					tbl$tbl <-
 						dplyr::bind_rows(tbl$tbl,
 														 tibble::tibble(
 														 	node = c("cdr"),
 														 	id = c(tbl$pass),
 														 	parent = c(parent),
-														 	atom = c(glue::glue("{rlang::get_expr(atom)}:{index}")),
-														 	typeof_atom = c(typeof(atom)),
+														 	label = c(glue::glue("{label}:{index}")),
 														 	position = c(index),
 														 	expression = c(e),
-														 	typeof_node = c(typeof(cdr)),
-														 	node_mimics = list(qtls_what_is_it(cdr))
+														 	typeof_carcdr = c(typeof(cdr_child)),
+														 	carcdr_mimics = list(qtls_what_is_it(cdr_child))
 														 ))
 					tbl$pass <- tbl$pass + 1
 				}

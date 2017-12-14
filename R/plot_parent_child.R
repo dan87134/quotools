@@ -24,13 +24,13 @@ qtls_plot_parent_child <- function(tbl, root_node = 1) {
 	graph <- DiagrammeR::create_graph(directed = TRUE)
 	context <- new.env()
 	context$graph <- graph
-	context$tbl <- dplyr::filter(tbl, !is.na(position))
+	context$tbl <- tbl
 	build_graph <-
 		function(context,
 						 current_id = root_node,
 						 parent_graph_id = 0) {
 			current_row <- dplyr::filter(context$tbl, id == current_id)
-			atom <- current_row$atom
+			label <- current_row$label
 			# add a node for the row we are currently working on
 			child_rows <- dplyr::filter(context$tbl, parent == current_id)
 			color = "blue"
@@ -38,7 +38,7 @@ qtls_plot_parent_child <- function(tbl, root_node = 1) {
 				color = "green"
 			}
 			context$graph <-
-				DiagrammeR::add_node(context$graph, label = atom, color = color)
+				DiagrammeR::add_node(context$graph, label = label, color = color)
 			# hang onto the id of the DiagrammeR node we just created in case
 			# the current row has children
 			current_graph_id <- context$graph$last_node
