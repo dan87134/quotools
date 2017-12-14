@@ -1,4 +1,4 @@
-q <- rlang::quo(a + b * (c + d * h) + e * f)
+q <- rlang::quo(x <- a + b * (c + d * h) + e * f)
 
 
 

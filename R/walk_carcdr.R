@@ -1,3 +1,20 @@
+label_fix <- function(label) {
+	if (length(label) == 1) {
+		label
+	} else {
+		if (rlang::is_pairlist(label)) {
+			"pairlist"
+		} else {
+			if (rlang::is_callable(label)) {
+				"function"
+			} else {
+				stringr::str_c(label, collapse = "")
+			}
+		}
+	}
+}
+
+
 #' Title
 #' build a table of parent child relationship based
 #' on car/cdr's from a quosure
@@ -42,7 +59,7 @@ qtls_walk_carcdr <-
 		# and the cdr is a list of its arguments
 		if (length(car) == 1) {
 			# add the function to the table
-			label <- rlang::get_expr(car)
+			label <- label_fix(rlang::get_expr(car))
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
 													tibble::tibble(
@@ -61,7 +78,7 @@ qtls_walk_carcdr <-
 			tbl$pass <- tbl$pass + 1
 		} else {
 			# if we get to here it means the car has more than one item in its list
-			expr <- rlang::get_expr(car)
+			label <- label_fix(rlang::get_expr(car))
 			tbl$tbl <-
 				dplyr::bind_rows( tbl$tbl,
 													tibble::tibble(
@@ -81,14 +98,14 @@ qtls_walk_carcdr <-
 				if (rlang::is_lang(car[[index]])) {
 					qtls_walk_carcdr(car[[index]], tbl, parent, order = index)
 				} else {
-					label <- rlang::get_expr(car[[index]])
+					label <- label_fix(rlang::get_expr(car[[index]]))
 						tbl$tbl <-
 						dplyr::bind_rows( tbl$tbl,
 															tibble::tibble(
 																node = c("car"),
 																id = c(tbl$pass),
 																parent = c(parent),
-																label = c(glue::glue("{label}:{index - 1}")),
+																label = c(glue::glue("{label}:{index}")),
 																position = c(index - 1),
 																expression = c(e),
 																typeof_carcdr = c(typeof(car)),
@@ -104,7 +121,7 @@ qtls_walk_carcdr <-
 														node = c("car"),
 														id = c(tbl$pass),
 														parent = c(parent),
-														label = c(stringr_str_c(":{length(car)}")),
+														label = c(glue::glue(":{length(car)}")),
 														position = c(0),
 														expression = c(e),
 														typeof_carcdr = c(typeof(car)),
@@ -120,7 +137,7 @@ qtls_walk_carcdr <-
 					qtls_walk_carcdr(cdr[[index]], tbl, parent, order = index)
 				} else {
 					cdr_child <- cdr[[index]]
-					label <- rlang::get_expr(cdr_child)
+					label <- label_fix(rlang::get_expr(cdr_child))
 					tbl$tbl <-
 						dplyr::bind_rows(tbl$tbl,
 														 tibble::tibble(
