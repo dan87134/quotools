@@ -20,11 +20,11 @@
 #'
 #' @examples
 #'
-qtls_plot_parent_childx <- function(tbl, root_node = 1) {
+qtls_plot_parent_child <- function(tbl, root_node = 1) {
 	graph <- DiagrammeR::create_graph(directed = TRUE)
 	context <- new.env()
 	context$graph <- graph
-	context$tbl <- tbl
+	context$tbl <- dplyr::filter(tbl, !is.na(position))
 	build_graph <-
 		function(context,
 						 current_id = root_node,
