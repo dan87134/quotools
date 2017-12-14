@@ -152,7 +152,7 @@ a + b
 ```
 
 `a` and `b` are symbols. When R goes to sum up those two symbols it has to somehow
-find out what their values it. It does this by looking up those symbols in
+find out what their values are. It does this by looking up those symbols in
 the context where that evaluation is being done.
 
 In R this context is called an environment. In fact in R the context may be
@@ -160,10 +160,10 @@ sequence of multiple environments that R goes through when it needs, or creates,
 the value of a symbol.
 
 The `rlang` package implements an *Expression Object Model* of R. A quosure contains
-that in memory repesentation of the module. In fact the `rlang` is a wrapper around
+that in memory repesentation of the model. In fact the `rlang` psckage is a wrapper around
 the `c` language memory model that R uses to evaluate expressions.
 
-So a quosue gives you access to all three of these language operational
+A quosue gives you access to all three of these language operational
 components.
 
 The big picture of what we just covered is that a person uses the syntax of R
@@ -223,8 +223,7 @@ equivalent of the *Expression Object Model* for R.
 ![Visualization of the DOM](htmlmodel.png)
 
 Notice that the *missing* tags seem to have appeared! Actually what you see are
-not tags, the are markers that represent objects used in the in an in memory model
-of html.
+not tags, the are markers that represent objects used in the in memory model of the html for the page.
 
 There are some utilitarian differences between the W3C DOM and the `rlang` 
 packages. The W3C formally defines the model component of html and the `rlang`
@@ -235,7 +234,7 @@ comprehensive tools  to visually explore a quosure.
 html, not the DOM, is designed to build a static web page. In classic html the
 only way to "liven" up a page by making it change, 
 except for some simpistic changes like a drop down menu,
-was to request the web site that
+is to request the web site that
 originally served up the page to send a new page to the 
 browser.
 
@@ -244,20 +243,21 @@ add some javascript to the page. That javascript examines and manipulates the
 DOM, not the html, for the page. When you use javascript like this you are "programming on the langauge", the hypertext markup language.
 
 With a quosure you can "program on the language" with the R langauge. The usage details are different but "programming on the langauge" in R is the same thing
-as using javascript with html to make dynamic web pages.
+as using javascript with html to make dynamic web pages my maipulating
+the DOM.
 
 ##Components in Action
 
 Before we go further and with only minimal explanation of the code, let's look
 at some examples of quosures that use the language operational components in
-action. These examples are only meant to show what can be accompished with quosures, the real programming details of how this is done is covered later in the tutorial.
+action. These examples are only meant to show what can be accompished with quosures, the programming details of how this is done is covered later in the tutorial.
 
 ###Complexity Measure, Using Syntax
 
 Here is a function that measures the complexity of an expression. It's metric is
 pretty simple, the longer the expression the more complex it is. However this 
 function needs to access the expression itself, *i.e.* the string the syntax allows,
-in order to implement this measure and it uses a quosure to do this.
+in order to implement this metric and it uses a quosure to do this.
 
 ```{r complexity}
 complexity <- function(expr) {
@@ -298,8 +298,11 @@ Bizzaro World add means subtract, multiple means divide and *vica versa*.
 ```{r bizzarro}
 barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
+	# get the context of the quosure
 	context <- new.env()
 	# change arithmetic function definition to bizzarro arithmetic
+	# in the context of the quosure
+	# note that this doesn't change these definitions anywhere else
 	context$`+` <- function(x,y) {x - y}
 	context$`-` <- function(x,y) {x + y}
 	context$`*` <- function(x,y) {x / y}
@@ -317,8 +320,8 @@ calc2
 ```
 
 Here, by manipulating the context component we were able to 
-substitute bizzarro arithmetic for regular arithmetic. Next we're going to change
-ggplot2 to use non-Euclidian geometry for it's plots... just kidding :-).
+substitute bizzarro arithmetic for regular arithmetic. Next we're going to change ggplot2 to use non-Euclidian geometry for it's plots... 
+ha, ha, just kidding :-).
 
 ### Bizzarro World Arithmetic again, Using Model
 
@@ -343,9 +346,9 @@ suppressPackageStartupMessages(library(tidyverse))
 barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
 	# get  rlang's model of q
-	model_table <- qtls_walk_carcdr(q)
+	model_table <- qtls_make_ast_table(q)
 	# we only want to use car model objects
-	cars <- dplyr::filter(model_table, type == "car")
+	cars <- dplyr::filter(model_table, expr_property == "car")
 	# if the car is an arithmetic operation 
 	# we want to flip it to the bizzarro  world
 	purrr::walk(cars$expression, function(expr) {
@@ -382,7 +385,7 @@ Same bizzarro results, but this time we bizzarro'd all the arithmetic operators
 in the expression and then let R do the evaluation... that's what rlang::eval_tidy
 does.
 
-The function `qtls_walk_carcdr` converts the model of an R expession that 
+The function `qtls_make_ast_table` converts the model of an R expession that 
 the `rlang` packages uses into a tabular form that is easier to use when you are
 "programming on the language". It lets you apply a lot of your R table processing
 knowlege and minimizes the amount of "detail" knowledge of how to access
@@ -395,7 +398,7 @@ second bizzarro calculation we did.
 suppressPackageStartupMessages(library(quotools))
 show_model_table <- function(expr) {
 	q <- rlang::enquo(expr)
-	print(qtls_walk_carcdr(q))
+	print(qtls_make_ast_table(q))
 }
 show_model_table(3 * 4 + 1)
 
@@ -415,3 +418,23 @@ These examples don't even begin to cover all the ways and thing you can do by
 *programming on the language" with quosures. But they do show that you can 
 access the data in a quosure and do what every you want to do with the 
 data inside of it.
+
+##`rlang` Model
+
+At first glance it seems that the `rlang` model of an R expression is pretty
+straightforward. It's often described as a tree structure... like this for 
+an the simple expression like: `a * b + c * d`
+
+```{r simpleexp}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(quotools))
+suppressPackageStartupMessages(library(DiagrammeR))
+q <- rlang::quo(a * b + 2 * d )
+ast_tbl <- qtls_make_ast_table(q)
+g <- qtls_plot_ast(ast_tbl)
+DiagrammeR::render_graph(g, layout = "tree")
+```
+What you see here is the abstract syntax table, or AST, for the `a * b + c * d` expression. We'll cover more about AST's shortly.
+
+However this diagram does not a representation of model `rlang` uses for expressions.
+

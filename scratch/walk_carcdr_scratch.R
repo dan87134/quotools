@@ -2,13 +2,13 @@
 
 # example of ysing table produced by qtls_walk_carcdr
 # to modify quosure
-q <- rlang::quo(a * b + 2 * d + (e + f * (x - y)))
-ast_tbl1 <- qtls_walk_carcdr(q)
-g <- qtls_plot_parent_child(ast_tbl1)
+q <- rlang::quo(a * b + 2 * d )
+ast_tbl1 <- make_ast_table(q)
+g <- qtls_plot_ast(ast_tbl1)
 DiagrammeR::render_graph(g, layout = "tree")
 
 
-q <- rlang::quo(function(x,y) { x + y}())
+q <- rlang::quo(f <- function(x,y) { x + y}(1,2))
 ast_tbl1 <- qtls_walk_carcdr(q)
 g <- qtls_plot_parent_child(ast_tbl1)
 DiagrammeR::render_graph(g, layout = "tree")
