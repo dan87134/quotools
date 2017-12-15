@@ -1,11 +1,109 @@
 # walk_carcdr scratch
 
+
 # example of ysing table produced by qtls_walk_carcdr
 # to modify quosure
 q <- rlang::quo(a * b + 2 * d )
-ast_tbl1 <- make_ast_table(q)
+ast_tbl1 <- qtls_make_ast_table(q)
 g <- qtls_plot_ast(ast_tbl1)
 DiagrammeR::render_graph(g, layout = "tree")
+
+q <- rlang::quo(a * b + 2 * d )
+t2 <- qtls_make_ast_table(q) %>%
+dplyr::filter(expr_property == "car")
+
+purrr::walk(t2$expression, function(expr) {
+	car <- rlang::node_car(expr)
+	if(rlang::is_symbol(car)) {
+		if(car == rlang::sym("*")) {
+			rlang::mut_node_car(expr, rlang::sym("/"))
+		}
+	}
+})
+
+flip_table <- tibble::tribble (
+	~ sym, ~ bizzarro_sym,
+	"+", "-",
+	"-", "=",
+	"*" , "/",
+	"/", "*"
+)
+
+dplyr::filter(flip_table, sym == rlang::sym("%"))$bizzarro_sym
+
+
+
+q <- rlang::quo(a * b + 2 * d )
+bizzarro_flip <- function(q) {
+t2 <- qtls_make_ast_table(q) %>%
+	dplyr::filter(expr_property == "car")
+
+purrr::walk(t2$expression, function(expr) {
+	car <- rlang::node_car(expr)
+	if (rlang::is_symbol(car)) {
+		flip <- dplyr::filter(flip_table, sym == car)$bizzarro_sym
+		if (flip != "") {
+			rlang::mut_node_car(expr, rlang::sym(flip))
+		}
+	}
+}
+)
+}
+
+
+dplyr::filter(flip_table, sym == rlang::sym("%"))$bizzarro_sym
+
+
+flip_table <- tibble::tribble(
+	~ sym, ~ bizzarro_sym,
+	"+", "-",
+	"-", "=",
+	"*" , "/",
+	"/", "*"
+)
+
+
+bizzarro_flip <- function(q) {
+	t2 <- qtls_make_ast_table(q) %>%
+		dplyr::filter(expr_property == "car")
+	purrr::walk(t2$expression, function(expr) {
+		car <- rlang::node_car(expr)
+		if (rlang::is_symbol(car)) {
+			flip <- dplyr::filter(flip_table, sym == car)$bizzarro_sym
+			if (flip != "") {
+				rlang::mut_node_car(expr, rlang::sym(flip))
+			}
+		}
+	})
+}
+
+q <- rlang::quo(a * b + 2 * d)
+
+bizzarro_flip(q)
+
+t2[1,]$expression
+
+purrr::walk(dplyr::select(t2, expression), function(row) {
+	print(row)
+	print("----")
+})
+
+
+purrr::walk(function(row) {
+	expr <- row
+	car <- rlang::node_car(expr)
+	if (rlang::is_symbol(car)) {
+		if (car == rlang::sym("*")) {
+		rlang::mut_node_car(expr, rlang::sym("/"))
+			return()
+	}
+}
+}
+)
+
+
+
+
 
 
 q <- rlang::quo(f <- function(x,y) { x + y}(1,2))

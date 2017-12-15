@@ -25,6 +25,7 @@ qtls_make_rlang_table <- function(
 	} else {
 		e <- q_or_expr
 	}
+
 	context$tbl <- dplyr::bind_rows(context$tbl, tibble::tibble(
 		id = c(context$pass),
 		parent = c(parent),
@@ -33,7 +34,7 @@ qtls_make_rlang_table <- function(
 		order = c(order),
 		expr_text = rlang::expr_text(e),
 		label = stringr::str_c(
-				rlang::expr_label(e), "\n", order,
+				label_fix(rlang::expr_label(e)), "\n", order,
 			collapse = ""),
 		what_is_expr = list(qtls_what_is_it(e))
 		)

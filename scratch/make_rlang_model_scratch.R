@@ -32,6 +32,11 @@ tbl <- qtls_make_rlang_table(qa)
 g <- qtls_plot_ast(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+qa <- rlang::quo(a * "b" + 7 * d - lim(x + 3))
+tbl <- qtls_make_rlang_table(qa)
+g <- qtls_plot_ast(tbl)
+DiagrammeR::render_graph(g, layout="tree")
+
 
 
 qa <- rlang::quo(a * b + 7 * d)
@@ -41,7 +46,7 @@ DiagrammeR::render_graph(g, layout="tree")
 
 
 
-qa <- rlang::quo(function(x) { x }(9))
+qa <- rlang::quo(function(x) { x })
 tbl <- qtls_make_rlang_table(qa)
 g <- qtls_plot_ast(tbl)
 DiagrammeR::render_graph(g, layout="tree")

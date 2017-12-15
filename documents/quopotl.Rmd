@@ -296,6 +296,7 @@ In this example we implement Bizzarro World ( https://en.wikipedia.org/wiki/Biza
 Bizzaro World add means subtract, multiple means divide and *vica versa*.
 
 ```{r bizzarro}
+
 barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
 	# get the context of the quosure
@@ -342,39 +343,40 @@ quosure and produce a bizzarro result.
 ```{r}
 suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(magrittr))
 
-barithmetic <- function(expr) {
-	q <- rlang::enquo(expr)
-	# get  rlang's model of q
-	model_table <- qtls_make_ast_table(q)
-	# we only want to use car model objects
-	cars <- dplyr::filter(model_table, expr_property == "car")
-	# if the car is an arithmetic operation 
-	# we want to flip it to the bizzarro  world
-	purrr::walk(cars$expression, function(expr) {
+# table of operators that are flipped in
+# the bizzarro world
+op_table <- tibble::tribble(
+	~ op, ~ bizzarro_op,
+	"+", "-",
+	"-", "=",
+	"*" , "/",
+	"/", "*"
+)
+
+# uses op_table to flip arithmetic operators
+# in the bizzarro world
+bizzarro_flip <- function(q) {
+	ast <- qtls_make_ast_table(q) %>%
+		dplyr::filter(expr_property == "car")
+	purrr::walk(ast$expression, function(expr) {
 		car <- rlang::node_car(expr)
 		if (rlang::is_symbol(car)) {
-		 	if (car == rlang::sym("+")) {
-				rlang::mut_node_car(expr, rlang::sym("-"))
-		 		return()
-			}
-		 	if (car == rlang::sym("-")) {
-				rlang::mut_node_car(expr, rlang::sym("+"))
-		 		return()
-			}
-		 	if (car == rlang::sym("*")) {
-				rlang::mut_node_car(expr, rlang::sym("/"))
-		 		return()
-			}
-		 	if (car == rlang::sym("/")) {
-				rlang::mut_node_car(expr, rlang::sym("*"))
-		 		return()
+			bizzarro_op <- dplyr::filter(op_table, op == car)$bizzarro_op
+			if (bizzarro_op != "") {
+				rlang::mut_node_car(expr, rlang::sym(bizzarro_op))
 			}
 		}
 	})
-	# now evaluate the modified expression
+}
+
+barithmetic <- function(expr) {
+	q <- rlang::enquo(expr)
+	bizzarro_flip(q)
 	rlang::eval_tidy(q)
 }
+
 # hmmm??
 barithmetic(3 + 1)
 # yikes!!
@@ -386,10 +388,13 @@ in the expression and then let R do the evaluation... that's what rlang::eval_ti
 does.
 
 The function `qtls_make_ast_table` converts the model of an R expession that 
-the `rlang` packages uses into a tabular form that is easier to use when you are
-"programming on the language". It lets you apply a lot of your R table processing
+the `rlang` packages uses into a tabular form of an abstract syntax table, or
+AST. We'll learn more about AST's later but having one in tablular form lets you apply
+your R table processing
 knowlege and minimizes the amount of "detail" knowledge of how to access
 parts of the `rlang` model of expressions.
+
+
 
 Here is what that table looks like for the 
 second bizzarro calculation we did.
@@ -403,6 +408,8 @@ show_model_table <- function(expr) {
 show_model_table(3 * 4 + 1)
 
 ```
+
+
 
 Notice that this  table is represents a tree by using the `id` and `parent` 
 columns. The row with a 0 parent is the root of the tree.
@@ -430,11 +437,14 @@ suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(DiagrammeR))
 q <- rlang::quo(a * b + 2 * d )
-ast_tbl <- qtls_make_ast_table(q)
+ast_tbl <- qtls_make_rlang_table(q)
 g <- qtls_plot_ast(ast_tbl)
 DiagrammeR::render_graph(g, layout = "tree")
 ```
-What you see here is the abstract syntax table, or AST, for the `a * b + c * d` expression. We'll cover more about AST's shortly.
+
+What you see here is a visualization of the 
 
 However this diagram does not a representation of model `rlang` uses for expressions.
+
+
 
