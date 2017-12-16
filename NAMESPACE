@@ -1,3 +1,5 @@
 exportPattern("^qtls_[[:alpha:]]+")
 import(rlang)
+import(dplyr)
+import(DiagrammeR)
 importFrom(magrittr,"%>%")

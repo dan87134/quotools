@@ -273,5 +273,77 @@ barithmetic(3 + 1)
 # yikes!!
 barithmetic(3 * 4 + 1)
 
+#-------------------------------
+
+
+q1 <- rlang::quo(a * b + c * d)
+q2 <- rlang::quo(function(x){x})
+q3 <- rlang::quo(function(x){x}(a))
+q4 <- rlang::quo(function(x = 9){x + b}(a + 1))
+q5 <- rlang::quo(function(x = 9){x + b}(function(y){b + 1})(p + 8))
+
+
+rhs1 <- rlang::f_rhs(q1)
+rhs2 <- rlang::f_rhs(q2)
+
+typeof(rhs1)
+typeof(rhs2)
+class(rhs1)
+class(rhs2)
+qtls_what_is_it(rhs1)
+qtls_what_is_it(rhs2)
+
+model <- qtls_make_rlang_table(q1)
+model <- qtls_make_rlang_table(q2)
+model <- qtls_make_rlang_table(q3)
+model <- qtls_make_rlang_table(q4)
+model <- qtls_make_rlang_table(q5)
+
+f3 <- rlang::eval_tidy(q5)
+x <- 9
+b <- 2
+a <- 3
+p <- 4
+
+f3(0)
+
+g <- qtls_plot_model(model)
+DiagrammeR::render_graph(g, layout="tree")
+
+model[[7, "expr_text"]]
+e <- model[[7, "expression"]]
+
+f <- rlang::eval_tidy(q)
+f(9)
+qtls_what_is_it(q)
+rhs <- rlang::f_rhs(q)
+rlang::expr_text(rhs)
+rlang::expr_label(rhs)
+typeof(rhs)
+class(rhs)
+
+qtls_what_is_it(rhs)
+car <- rlang::node_car(rhs)
+qtls_what_is_it(car)
+class(car)
+typeof(car)
+length(car)
+cdr <- rlang::node_cdr(rhs)
+qtls_what_is_it(cdr)
+typeof(cdr)
+cdr1 <- cdr[[1]]
+typeof(cdr1)
+qtls_what_is_it(cdr1)
+cdr2 <- rlang::node_cdr(cdr[[2]])
+qtls_what_is_it(cdr2)
+rlang::node_tag(cdr2)
+
+
+
+
+
+
+
+
 
 

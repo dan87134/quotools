@@ -9,6 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+>Expressions have lesser ones upon their backs to bite 'em. 
+>Lesser expressions have still lesser ones and so on *ad finitum*.
+
 ## Introduction
 
 Quosures enable *Programming on the Language*. This tutorial looks at how they
@@ -171,7 +175,7 @@ to write an expression which in turn is translated into in memory model of that 
 called an *Expression Object Model*. Then R evaluates the *Expression Object Model*
 in a context and produces a result.
 
-# An Analog to Quosures
+# HTML And Analog to Quosures
 
 So far the explanation of quosures and how they can be used to change how R interprets
 its syntax is a bit on the abstract side. A lot of R users are familar, to some
@@ -256,7 +260,7 @@ action. These examples are only meant to show what can be accompished with quosu
 
 Here is a function that measures the complexity of an expression. It's metric is
 pretty simple, the longer the expression the more complex it is. However this 
-function needs to access the expression itself, *i.e.* the string the syntax allows,
+function needs to access the expression string itself,
 in order to implement this metric and it uses a quosure to do this.
 
 ```{r complexity}
@@ -274,9 +278,10 @@ complexity(a + b)
 So our `complexity` function shows that `a + b` is five times more  complicated
 than `a` :-) .
 
-The important thing shown here is that we were able to access the argument of `complexity`
-as a string and then process that string any way we please. In this case we just got
-it length but, of course, we could have done much more with it.
+The important thing shown here is that we were able to access the argument
+of `complexity` as a string and then process that string any way we please. 
+In this case we just got it length but, of course, we could have done much more 
+with it.
 
 However there is limitation here. It's not a deal breaker but in the general case
 it's pretty significant. The argument of complexity has to be a string that is
@@ -292,23 +297,27 @@ is called is to check that each argument is allowed by the R language syntax. If
 
 ###Bizzaro World Arithmetic, Using Context
 
-In this example we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
+In this example and the next we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
 Bizzaro World add means subtract, multiple means divide and *vica versa*.
+
+In this example we use the context of a quosure to implement Bizzarro World
+arithmetic and in the next we will use the `rlang` model of an expression
+to implement it.
 
 ```{r bizzarro}
 
 barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
-	# get the context of the quosure
-	context <- new.env()
-	# change arithmetic function definition to bizzarro arithmetic
-	# in the context of the quosure
-	# note that this doesn't change these definitions anywhere else
+	# get the context component of the model the `rlang` built for the expression
+	context <- rlang::get_env(q)
+	# redefine the arithmetic functions to do bizzarro arithmetic
+	# in the context of the quosure.
+	# Note that this doesn't change these definitions anywhere else.
 	context$`+` <- function(x,y) {x - y}
 	context$`-` <- function(x,y) {x + y}
 	context$`*` <- function(x,y) {x / y}
 	context$`/` <- function(x,y) {x * y}
-	# to the evaluation in Bizzarro World
+	# use R to do the evaluation in Bizzarro World
 	rlang::eval_tidy(q, context)
 }
 
@@ -316,55 +325,63 @@ calc1 <- barithmetic(3 + 1)
 # Hmmmm???
 calc1
 calc2 <- barithmetic(3 * 4 + 1)
-#yikes!!!!
+#yikes, that's bizzare!!!!
 calc2
 ```
 
-Here, by manipulating the context component we were able to 
-substitute bizzarro arithmetic for regular arithmetic. Next we're going to change ggplot2 to use non-Euclidian geometry for it's plots... 
-ha, ha, just kidding :-).
+Here we were able to reinterpret the expression passed into `barithmetic` by
+manipulating the context component to 
+substitute bizzarro arithmetic for regular arithmetic. 
+
+Next we're going to change ggplot2 to use non-Euclidian geometry
+for it's plots... ha, ha, just kidding :-).
 
 ### Bizzarro World Arithmetic again, Using Model
 
-Now we are going to use the model of R expressions that the `rlang` package uses,
+Now we are going to use the model component of R expressions that the 
+`rlang` package uses,
 to implement bizzarro arithmetic. This example is going use some of the code
 from the files that can be downloaded for this tutorial. The details of how the
-functions in this code work won't be explained in any detail 
-until later in this tutorial.
+functions in this code work won't be explained until later in this tutorial.
 
-What the barithmetic function does in this example is extract the
-model the `rlang` package uses for expressions from a quosure then searches it for
-all the aritmetic operators in it, that is +, -, *, and /, and then flips each one to
-it's bizzarro world version.
+This example uses `qtls_make_rlang_table` to extract the model component from
+a quosure.
 
-After the operators have been flipped barithmetic uses R to evaluate the
-quosure and produce a bizzarro result.
+It  then analyzes the model to find all the arithmetic operations
+in it and then changes them to their Bizzarro World counterpart. For example 
+`+` is changed to `- in the model.
+
+After that it just let's R evaluate the modified model.
+
 
 ```{r}
 suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
-
-# table of operators that are flipped in
-# the bizzarro world
+# table of regular arithmetic operators and their Bizzarro
+# World counterparts
 bizzarro_op <- tibble::tribble(~ sym, ~ bizzarro_sym,
 	"+", "-",
 	"-", "=",
 	"*" , "/",
 	"/", "*")
-# uses bizzarro_table to flip arithmetic operators
+# use bizzarro_flip to flip arithmetic operators
 # into the bizzarro world
 bizzarro_flip <- function(q) {
-	# extract the rlang model of the quosure q
+	# extract the rlang model component of the quosure q
 	model <- qtls_make_rlang_table(q)
 	# walk through all the expressions in the model
 	purrr::walk(model$expression, function(expr) {
 		car <- rlang::node_car(expr)
+		# if the expression is a symbol you need to check it to see if
+		# it is an arithmetic operator
 		if (rlang::is_symbol(car)) {
+			# see if there is a Bizzarro World counterpart for operator
 			flip <- dplyr::filter(bizzarro_op, sym == car)$bizzarro_sym
 			# if you find an arithemtic operator flip it into the bizzarro world
 			if (length(flip) > 0) {
 				# this replaces the existing operator with it's bizzarro version
+				# note that this modifies the q argument in place, not copy on write
 				rlang::mut_node_car(expr, rlang::sym(flip))
 			}
 		}
@@ -377,35 +394,21 @@ barithmetic <- function(expr) {
 }
 # hmmm??
 barithmetic(3 + 1)
-# yikes!!
+#yikes, that's bizzare!!!!
 barithmetic(3 * 4 + 1)
 ```
 
 Same bizzarro results, but this time we bizzarro'd all the arithmetic operators
-in the expression and then let R do the evaluation of the quosure instead
-of overrding the arithmetic operators. rlang::eval_tidy is doing the
-evaluation of the quosure.
+in the model component and then let R do the evaluation of the quosure instead
+of overrding the arithmetic operators in the context component.
+rlang::eval_tidy is doing the evaluation of the quosure with the modified model.
 
-The function `qtls_make_rlang_table` converts the model of an R expession that 
-the `rlang` packages uses into a table. And the only rows we care about
-are ones where the expression is a symbol... bizzarro flip checks for that
-by using rlang::is_symbol.
-
-Here is what that table looks like for the 
-second bizzarro calculation we did.
+The function `qtls_make_rlang_table` converts the `rlang` model of an expession
+into a table. The only rows we care about are ones where the expression
+is a symbol.
 
 
-We'll be covering more details of what is in this table later but here are
-a few salient points.
-
-Notice that this  table is representing a tree. The `id` and `parent` 
-columns define the structure of the tree. The row with a 0 parent is 
-the root of the tree.
-
-The only column we care about for implementing bizzarro arithmetic is the
-expression. 
-
-##`rlang` Model
+##Introduction to the `rlang` Model Component
 
 Here is the
 content of the model table we used for the `3 * 4 + 1` expression we used
@@ -420,9 +423,24 @@ show_model_table <- function(expr) {
 show_model_table(3 * 4 + 1)
 ```
 
-You can see that it is a tree structure, the id and parent columns define the
-tree. Here is a visualization of the basic tree structure
-for the expression `a * b + c * d`.
+We'll be covering more details of what is in this table and the model later
+but here are a few salient points.
+
+Notice that this  table is representing a tree. The `id` and `parent` 
+columns define the structure of the tree. The row with a 0 parent is 
+the root of the tree.
+
+We didn't need to turn the model into a table to implement Bizzarro World
+arithmetic. The `rlang` package has
+functions, which we'll look at later, that will walk through the entire model
+but code that  uses them is tedious to write and understand.
+
+With the model as a table you can apply your existing skills for working with
+tabular data to do *programming on the languge* rather then working with
+low-level functions.
+
+Here is a visualization of the basic tree structure
+for the expression `a * b + c * d` based on the id and parent columns.
 
 ```{r simpleexp}
 suppressPackageStartupMessages(library(tidyverse))
@@ -434,17 +452,29 @@ g <- qtls_plot_model(model)
 DiagrammeR::render_graph(g, layout = "tree")
 ```
 
+The `qtls_plot_model` builds a `DiagarmmeR` plot of the model.
+
+As an aside notice that
+we were able to re-use the tablular form of the `rlang` model to produce a
+plot rather than using all the low-level functions in the `rlang` package to
+do this. Later we see other re-uses of the the tabular model component.
+
+Each circle in this illustration is a object in our tree and displays the text
+from the expr_text column in the model table. 
+
 Of course the table we just looked at has a lot more infomation in it
 than this tree does. The key thing that this diagram illustrates is that
-the model `rlang` uses to represent a quosure is a three of expressions.
+the `rlang` model of a quosure is a tree of node objects that the `rlang`
+package uses to model an expression.
 
-A the root of the tree you can see the expression we started with
+At the root of the tree you can see the expression we started with,
 `a * b + c * d`. As you move down the tree you can see that it breaks
-down the initial expression into smaller an smaller pieces.
-
-There is a special kind of tree that R uses it do the actual evaluation
-of a quosure. It is called a abstract syntax tree or AST. Even though
-is is tree shaped an AST is, in effect, a detailed list of instruction
-that R uses to do the actual evaluation.
+down the initial expression into smaller an smaller parts.
 
 
+
+
+## Model Details
+
+The introduction to the model in the previous section lossly defined a model as
+a tree of objects.  

@@ -26,18 +26,20 @@ qtls_make_rlang_table <- function(
 	} else {
 		e <- q_or_expr
 	}
-
+	fcn_def <- inherits(e, "srcref")
+	dictionaryish <- rlang::is_dictionaryish(e)
 	context$tbl <- dplyr::bind_rows(context$tbl, tibble::tibble(
 		id = c(context$pass),
 		parent = c(parent),
 		source = c(source),
-		expression = if(rlang::is_lang(e)) c(e) else c(NA),
+		expression = if (!fcn_def & !dictionaryish) c(e) else c(NA),
 		expr_type = c(typeof(e)),
+		expr_class = c(class(e)),
 		order = c(order),
 		expr_text = rlang::expr_text(e),
-		label = stringr::str_c(
-				label_fix(rlang::expr_label(e)), "\n", order,
-			collapse = ""),
+		label =  if (!fcn_def) stringr::str_c(
+				label_fix(rlang::expr_text(e)), "\n", order,
+			collapse = "") else c("srcdef"),
 		what_is_expr = list(qtls_what_is_it(e))
 		)
 	)

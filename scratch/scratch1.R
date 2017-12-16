@@ -1,8 +1,27 @@
 # scratch
 
 q <- rlang::quo(a * b + c * d)
+q
+rlang::quo(q)
+rlang::quo(!!q)
 qtls_what_is_it(q)
+rlang::expr_text(q)
+qtls_what_is_it(!!q)
 
+f2 <- function(x) {x}
+f2(q)
+f2(!!q)
+
+f3 <- function(x) {rlang::enquo(x)}
+f3(q)
+f3(!!q)
+
+f <- function(expr) {
+	rlang::enquo(expr)
+}
+
+q <- f(a + b)
+ f(!!q)
 
 tf <- function(arg) {
 	q <- rlang::enquo(arg)
