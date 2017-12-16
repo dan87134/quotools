@@ -12,9 +12,9 @@ tf <- function(arg) {
 }
 
 q <- rlang::quo(a)
-rlang::is_lang(q)
 cdr <- rlang::node_cdr(q)
 rlang::is_lang(cdr)
+rlang::is_lang(q)
 
 
 glue::glue("{stringr::str_c(1:2, collapse='')}")
@@ -407,4 +407,10 @@ df <-stringr::str_replace_all(as.list(df), "a", "x")
 
 class(df)
 typeof(df)
+
+
+
+q <- rlang::quo(a * b + 2 * d )
+ast_tbl <- qtls_make_rlang_table(q)
+g <- qtls_plot_(ast_tbl)
 

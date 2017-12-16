@@ -20,7 +20,7 @@
 #'
 #' @examples
 #'
-qtls_plot_ast <- function(tbl, root_node = 1) {
+qtls_plot_model <- function(tbl, root_node = 1) {
 	graph <- DiagrammeR::create_graph(directed = TRUE)
 	context <- new.env()
 	context$graph <- graph

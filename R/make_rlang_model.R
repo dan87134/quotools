@@ -4,7 +4,8 @@ qtls_make_rlang_table <- function(
 	q_or_expr,
 	parent = 0L,
 	context = new.env() ,
-	order = 1L) {
+	order = 1L,
+	source = "root") {
 	if (is.null(context$tbl)) {
 		context$tbl <-
 			tibble::tribble(
@@ -29,7 +30,8 @@ qtls_make_rlang_table <- function(
 	context$tbl <- dplyr::bind_rows(context$tbl, tibble::tibble(
 		id = c(context$pass),
 		parent = c(parent),
-		expr = list(e),
+		source = c(source),
+		expression = if(rlang::is_lang(e)) c(e) else c(NA),
 		expr_type = c(typeof(e)),
 		order = c(order),
 		expr_text = rlang::expr_text(e),
@@ -47,13 +49,15 @@ qtls_make_rlang_table <- function(
 		if (car_length == 1) {
 			qtls_make_rlang_table(car, order = 1,
 														context = context,
-														parent = parent)
+														parent = parent,
+														source = "car")
 		} else {
 			for (index in 1:length(car)) {
 				qtls_make_rlang_table(car[[index]],
 															order = index,
 															context = context,
-															parent = parent)
+															parent = parent,
+															source ="car")
 			}
 		}
 		cdr <- rlang::node_cdr(e)
@@ -61,13 +65,15 @@ qtls_make_rlang_table <- function(
 		if (cdr_length == 1) {
 			qtls_make_rlang_table(cdr, order = 1 + car_length,
 														context = context,
-														parent = parent)
+														parent = parent,
+														source = "cdr")
 		} else {
 			for (index in 1:cdr_length) {
 				qtls_make_rlang_table(cdr[[index]],
 															order = index + car_length,
 															context = context,
-															parent = parent)
+															parent = parent,
+															source = "cdr")
 			}
 		}
 
