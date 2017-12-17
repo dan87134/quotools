@@ -3,7 +3,7 @@
 
 #quosures can only be built out of expression, not a program script
 # this produces an error
-q <- rlang::quo(a <- 8; b <- 9)
+q <- rlang::quo(a <- 8, b <- 9)
 
 q2 <- rlang::quo(a * b + c * d)
 
@@ -280,7 +280,31 @@ q1 <- rlang::quo(a * b + c * d)
 q2 <- rlang::quo(function(x){x})
 q3 <- rlang::quo(function(x){x}(a))
 q4 <- rlang::quo(function(x = 9){x + b}(a + 1))
-q5 <- rlang::quo(function(x = 9){x + b}(function(y){b + 1})(p + 8))
+q5 <- rlang::quo(f <- function(x = 9){x + b}(function(y){b + 1})(p + 8))
+q6 <- rlang::quo(1 + 2)
+m <- qtls_make_rlang_table(q6)
+rhs <- rlang::f_rhs(q6)
+qtls_what_is_it(rhs)
+typeof(rhs)
+class(rhs)
+qtls_what_is_it(rhs)
+
+ex <- m[[3, "expression"]]
+c <- rlang::node_car(ex)
+qtls_what_is_it(ex)
+
+
+
+rlang::is_symbol(ex)
+
+
+car <- rlang::node_car(rhs)
+cdr <- rlang::node_cdr(rhs)
+length(car)
+length(cdr)
+typeof(car)
+car
+rlang::mut_node_car(rhs, rlang::sym("-"))
 
 
 rhs1 <- rlang::f_rhs(q1)
@@ -298,6 +322,9 @@ model <- qtls_make_rlang_table(q2)
 model <- qtls_make_rlang_table(q3)
 model <- qtls_make_rlang_table(q4)
 model <- qtls_make_rlang_table(q5)
+model <- qtls_make_rlang_table(q6)
+
+l <- model[[4, "what_is_expr"]]
 
 f3 <- rlang::eval_tidy(q5)
 x <- 9
@@ -338,8 +365,67 @@ cdr2 <- rlang::node_cdr(cdr[[2]])
 qtls_what_is_it(cdr2)
 rlang::node_tag(cdr2)
 
+q10 <- rlang::quo(2 + 3)
+ex <- rlang::f_rhs(q6)
+rlang::is_symbol(ex)
+q6
+
+expr <- model[[2, "expression"]]
+qtls_what_is_it(expr)
+car <- rlang::node_car(expr)
+cdr <- rlang::node_cdr(expr)
+
+rlang::mut_node_cdr(expr, rlang::sym("-"))
+
+rlang::is_symbol(expr)
+print(expr)
 
 
+#---------------------------------------
+
+suppressPackageStartupMessages(library(quotools))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(magrittr))
+# table of regular arithmetic operators and their Bizzarro
+# World counterparts
+bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
+																"+", "-",
+																"-", "=",
+																"*" , "/",
+																"/", "*")
+# use bizzarro_flip to flip arithmetic operators
+# into the bizzarro world
+bizzarro_flip <- function(q) {
+	# extract the rlang model component of the quosure q
+	model <- qtls_make_rlang_table(q)
+	# walk through all the expressions in the model
+	purrr::walk(model$expression, function(expr) {
+		if (!rlang::is_atomic(expr)) {
+			car <- rlang::node_car(expr)
+			# if the expression is a symbol you need to check it to see if
+			# it is an arithmetic operator
+			if (rlang::is_symbol(car)) {
+				# see if there is a Bizzarro World counterpart for operator
+				flip <- dplyr::filter(bizzarro_op, sym == car)$bizzarro_sym
+				# if you find an arithemtic operator flip it into the bizzarro world
+				if (length(flip) > 0) {
+					# this replaces the existing operator with it's bizzarro version
+					# note that this modifies the q argument in place, not copy on write
+					rlang::mut_node_car(expr, rlang::sym(flip))
+				}
+			}
+		}
+	})
+}
+barithmetic <- function(expr) {
+	q <- rlang::enquo(expr)
+	bizzarro_flip(q)
+	rlang::eval_tidy(q)
+}
+# hmmm??
+barithmetic(3 + 1)
+#yikes, that's bizzare!!!!
+barithmetic(3 * 4 + 1)
 
 
 

@@ -32,14 +32,14 @@ qtls_make_rlang_table <- function(
 		id = c(context$pass),
 		parent = c(parent),
 		source = c(source),
-		expression = if (!fcn_def & !dictionaryish) c(e) else c(NA),
+		expression = if (!fcn_def & !dictionaryish) list(e) else c(NA),
 		expr_type = c(typeof(e)),
 		expr_class = c(class(e)),
 		order = c(order),
 		expr_text = rlang::expr_text(e),
 		label =  if (!fcn_def) stringr::str_c(
-				label_fix(rlang::expr_text(e)), "\n", order,
-			collapse = "") else c("srcdef"),
+				label_fix(rlang::expr_text(e)), "\n", order, "/", source,
+			collapse = "") else c(stringr::str_c("srcdef\n", order, "/", source)),
 		what_is_expr = list(qtls_what_is_it(e))
 		)
 	)
@@ -59,7 +59,7 @@ qtls_make_rlang_table <- function(
 															order = index,
 															context = context,
 															parent = parent,
-															source ="car")
+															source = "car")
 			}
 		}
 		cdr <- rlang::node_cdr(e)
