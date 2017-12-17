@@ -447,6 +447,44 @@ barithmetic(3 * 4 + 1)
 q10 <- rlang::quo(3 + 2)
 t2 <- qtls_make_rlang_table(q10)
 t3 <- dplyr::filter(t2, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+t4 <- dplyr::select(t3, sym = expression,
+											 parent = t2[[id == parent, "expression"]])
+t5 <- dplyr::right_join(dplyr::select(t2, id, rowid),
+												dplyr::select(t3, rowid, id = parent), by = c("id"),
+												suffix = c(".lang", ".op"))
+expr <- dplyr::select(dplyr::filter(t2,
+																		rowid == 2), expression)[[1]]
+
+
+purrr::walk2(t5$expression.lang, t5$expression.op, function(expr, op) {
+	print(expr)
+	print("---")
+	print(op)
+})
+
+s <- rlang::sym("+")
+
+bop <- dplyr::filter(bizzarro_op, sym == s)$bizzarro_sym
+
+
+
+rlang::expr_text(t5[[1, "expression.lang"]])
+qtls_what_is_it(t5[[1, "expression.lang"]])
+
+
+
+
+rhs <- rlang::f_rhs(q10)
+car <- rlang::node_car(rhs)
+qtls_what_is_it(car)
+car2 <- rlang::node_car(car)
+
+
+s <- rlang::sym("-")
+str(s)
+rlang::is_symbol(s)
+qtls_what_is_it(s)
+
 
 rlang::mut_node_car(t2[2,]$expression, rlang::sym("-"))
 
@@ -461,6 +499,11 @@ t3[[1, "expression"]]
 f <- dplyr::filter(bizzarro_op, sym == "+" | sym == "-")$bizzarro_sym
 typeof(f)
 
+e <- rlang::expr(1 + 2)
+
+qtls_what_is_it(e)
+
+rlang::eval_tidy(e)
 
 
 suppressPackageStartupMessages(library(quotools))
@@ -478,27 +521,24 @@ bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
 bizzarro_flip2 <- function(q, op_table) {
 	# extract the rlang model component of the quosure q
 	model <- qtls_make_rlang_table(q)
-	symbols <- dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
-
-	print("start walk")
-	purrr::walk(1:nrow(symbols), function(index, tbl, op_table) {
-		expr <- tbl[[index, "expression"]]
-		op <- tbl[[index, "expr_text"]]
-		print(op)
-		flip <- dplyr::filter(op_table, sym == op)$bizzarro_sym
-		print(flip)
-		print("start")
-		print(typeof(expr))
-		print(pryr::address(expr))
-		print(str(expr))
-		car <- rlang::node_car(expr)
-		if (rlang::is_symbol(car)) {
-			print(typeof(car))
-		}
-		rlang::mut_node_car(expr, rlang::sym(flip))
-		}, symbols, op_table
+	symbols <-
+		dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+	ops <- dplyr::right_join(
+		dplyr::select(model, id, rowid),
+		dplyr::select(symbols, rowid, id = parent),
+		by = c("id"),
+		suffix = c(".expr", ".op")
 	)
-	#})
+	purrr::walk2(
+		ops$rowid.expr, ops$rowid.op,
+		function(exprid, opid, op_tbl) {
+			expr <- dplyr::select(
+				dplyr::filter(model, rowid == exprid), expression)[[1]][[1]]
+			op <- dplyr::select(
+				dplyr::filter(model, rowid == opid), expression)[[1]][[1]]
+			bop <- dplyr::filter(op_table, sym == op)$bizzarro_sym
+			rlang::mut_node_car(expr, rlang::sym(bop))
+		}, op_tbl = bizzarro_op)
 }
 barithmetic2 <- function(expr) {
 	q <- rlang::enquo(expr)
