@@ -32,7 +32,8 @@ qtls_make_rlang_table <- function(
 		id = c(context$pass),
 		parent = c(parent),
 		source = c(source),
-		expression = if (!fcn_def & !dictionaryish) list(e) else c(NA),
+		address = c(pryr::address(e)),
+		expression = if (!fcn_def & !dictionaryish)  list(e) else  c(NA),
 		expr_type = c(typeof(e)),
 		expr_class = c(class(e)),
 		order = c(order),
@@ -80,5 +81,5 @@ qtls_make_rlang_table <- function(
 		}
 
 	}
-	context$tbl
+	tibble::rowid_to_column(context$tbl)
 	}

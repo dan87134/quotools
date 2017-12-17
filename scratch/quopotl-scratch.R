@@ -192,8 +192,6 @@ op_table <- tibble::tribble(
 bizzarro_flip <- function(q) {
 	t2 <- qtls_make_rlang_table(q)
 	purrr::walk(t2$expr, function(expr) {
-#		car <- rlang::node_car(row)
-#		expr <- t2[[index, "expr"]]
 		if (rlang::is_symbol(expr)) {
 			bizzarro_op <- dplyr::filter(op_table, op == rlang::expr_text(expr))$bizzarro_op
 			if (length(bizzarro_op) != 0) {
@@ -236,7 +234,7 @@ bizzarro_flip <- function(q) {
 
 
 #------------------------
-
+# working example
 bizzarro_op <- tibble::tribble(
 	~ sym, ~ bizzarro_sym,
 	"+", "-",
@@ -380,8 +378,21 @@ rlang::mut_node_cdr(expr, rlang::sym("-"))
 rlang::is_symbol(expr)
 print(expr)
 
-
+rlang::is_symbol(NULL)
 #---------------------------------------
+q2 <- rlang::quo(1 + 2)
+t2 <- qtls_make_rlang_table(q2)
+t3 <- dplyr::filter(t2, expr_type == "symbol")
+
+ex1 <- t3[[1, "expression"]]
+pryr::address(ex1)
+
+purrr::walk(1:nrow(t3), function(index, tbl) {
+ex <- tbl[[index, "expression"]]
+print(pryr::address(ex))
+
+
+	}, t3)
 
 suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(tidyverse))
@@ -427,6 +438,77 @@ barithmetic(3 + 1)
 #yikes, that's bizzare!!!!
 barithmetic(3 * 4 + 1)
 
+
+
+
+#---------------------------------------
+
+
+q10 <- rlang::quo(3 + 2)
+t2 <- qtls_make_rlang_table(q10)
+t3 <- dplyr::filter(t2, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+
+rlang::mut_node_car(t2[2,]$expression, rlang::sym("-"))
+
+
+t2 <- qtls_make_rlang_table(q10)
+
+
+ex <- t2[t2$rowid == 2,]$expression[[1]]
+typeof(ex)
+nrow(t3)
+t3[[1, "expression"]]
+f <- dplyr::filter(bizzarro_op, sym == "+" | sym == "-")$bizzarro_sym
+typeof(f)
+
+
+
+suppressPackageStartupMessages(library(quotools))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(magrittr))
+# table of regular arithmetic operators and their Bizzarro
+# World counterparts
+bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
+																"+", "-",
+																"-", "=",
+																"*" , "/",
+																"/", "*")
+# use bizzarro_flip to flip arithmetic operators
+# into the bizzarro world
+bizzarro_flip2 <- function(q, op_table) {
+	# extract the rlang model component of the quosure q
+	model <- qtls_make_rlang_table(q)
+	symbols <- dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+
+	print("start walk")
+	purrr::walk(1:nrow(symbols), function(index, tbl, op_table) {
+		expr <- tbl[[index, "expression"]]
+		op <- tbl[[index, "expr_text"]]
+		print(op)
+		flip <- dplyr::filter(op_table, sym == op)$bizzarro_sym
+		print(flip)
+		print("start")
+		print(typeof(expr))
+		print(pryr::address(expr))
+		print(str(expr))
+		car <- rlang::node_car(expr)
+		if (rlang::is_symbol(car)) {
+			print(typeof(car))
+		}
+		rlang::mut_node_car(expr, rlang::sym(flip))
+		}, symbols, op_table
+	)
+	#})
+}
+barithmetic2 <- function(expr) {
+	q <- rlang::enquo(expr)
+	bizzarro_flip2(q, bizzarro_op)
+	rlang::eval_tidy(q)
+}
+# hmmm??
+barithmetic2(3 + 1)
+#yikes, that's bizzare!!!!
+barithmetic2(3 * 4 + 1)
 
 
 
