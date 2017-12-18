@@ -449,8 +449,8 @@ t2 <- qtls_make_rlang_table(q10)
 t3 <- dplyr::filter(t2, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
 t4 <- dplyr::select(t3, sym = expression,
 											 parent = t2[[id == parent, "expression"]])
-t5 <- dplyr::right_join(dplyr::select(t2, id, rowid),
-												dplyr::select(t3, rowid, id = parent), by = c("id"),
+t5 <- dplyr::right_join(dplyr::select(t2, id, rowid, expression),
+												dplyr::select(t3, rowid, id = parent, expression), by = c("id"),
 												suffix = c(".lang", ".op"))
 expr <- dplyr::select(dplyr::filter(t2,
 																		rowid == 2), expression)[[1]]
@@ -505,7 +505,8 @@ qtls_what_is_it(e)
 
 rlang::eval_tidy(e)
 
-
+#-------------------------------------
+# working table based implementation
 suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
@@ -524,31 +525,28 @@ bizzarro_flip2 <- function(q, op_table) {
 	symbols <-
 		dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
 	ops <- dplyr::right_join(
-		dplyr::select(model, id, rowid),
-		dplyr::select(symbols, rowid, id = parent),
+		dplyr::select(model, id,  expression),
+		dplyr::select(symbols,  id = parent, expression),
 		by = c("id"),
-		suffix = c(".expr", ".op")
-	)
+		suffix = c(".expr", ".op"))
+		print(ops)
+
 	purrr::walk2(
-		ops$rowid.expr, ops$rowid.op,
-		function(exprid, opid, op_tbl) {
-			expr <- dplyr::select(
-				dplyr::filter(model, rowid == exprid), expression)[[1]][[1]]
-			op <- dplyr::select(
-				dplyr::filter(model, rowid == opid), expression)[[1]][[1]]
+		ops$expression.expr, ops$expression.op,
+		function(expr, op, op_tbl) {
 			bop <- dplyr::filter(op_table, sym == op)$bizzarro_sym
-			rlang::mut_node_car(expr, rlang::sym(bop))
+			#rlang::mut_node_car(expr, rlang::sym(bop))
 		}, op_tbl = bizzarro_op)
 }
-barithmetic2 <- function(expr) {
+barithmetic2 <- function(expr, op_table) {
 	q <- rlang::enquo(expr)
-	bizzarro_flip2(q, bizzarro_op)
+	bizzarro_flip2(q, op_table)
 	rlang::eval_tidy(q)
 }
+barithmetic2(3 + 1, bizzarro_op)
 # hmmm??
-barithmetic2(3 + 1)
+barithmetic2(3 * 4 + 1, bizzarro_op)
 #yikes, that's bizzare!!!!
-barithmetic2(3 * 4 + 1)
 
 
 

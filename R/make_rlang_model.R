@@ -1,4 +1,21 @@
 # make rlang model table
+label_fix <- function(label) {
+	if (length(label) == 1) {
+		label
+	} else {
+		if (rlang::is_pairlist(label)) {
+			"pairlist"
+		} else {
+			if (rlang::is_callable(label)) {
+				"function"
+			} else {
+				stringr::str_c(label, collapse = "")
+			}
+		}
+	}
+}
+
+
 
 qtls_make_rlang_table <- function(
 	q_or_expr,
