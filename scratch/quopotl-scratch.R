@@ -525,15 +525,17 @@ bizzarro_flip2 <- function(q, op_table) {
 	symbols <-
 		dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
 	ops <- dplyr::right_join(
-		dplyr::select(model, id,  expression),
-		dplyr::select(symbols,  id = parent, expression),
+		dplyr::select(model, id,  expr = expression),
+		dplyr::select(symbols,  id = parent, op = expression),
 		by = c("id"),
 		suffix = c(".expr", ".op"))
 		print(ops)
-
+	print(ops[[1, "expression.expr"]])
 	purrr::walk2(
-		ops$expression.expr, ops$expression.op,
+		ops$expr, ops$op,
 		function(expr, op, op_tbl) {
+			print(typeof(expr))
+			print(op)
 			bop <- dplyr::filter(op_table, sym == op)$bizzarro_sym
 			#rlang::mut_node_car(expr, rlang::sym(bop))
 		}, op_tbl = bizzarro_op)

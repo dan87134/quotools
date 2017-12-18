@@ -1,6 +1,10 @@
 # scratch
 
-q <- rlang::quo(a * b + c * d)
+q <- rlang::quo(function(x = 3) { x}(9))
+tbl <- qtls_make_rlang_table(q)
+g <- qtls_plot_model(tbl)
+DiagrammeR::render_graph(g, layout="tree")
+
 q
 rlang::quo(q)
 rlang::quo(!!q)
