@@ -9,21 +9,39 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+>Is a tree with two trunks a single tree?
+
+
+##Introduction
+This tutorial is about the structure of a quosure. It's purpose is to provide a 
+foundation for another tutorial that will follow it about using quosures to 
+*program on the langauge* like what is done by many of the functions in the
+the tidyverse.
+
+Some of the functions in this tutorial have the prefix "qtls_". They are not
+available yet but will be as part of the tutorial that follows this one.
+
+## Basics
 A quosure object is a wrapper around an expression. The `typeof` a quosure is
 `language` meaning a quosure is a language object. 
 
 ```{r typeof}
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(quotools))
+# make a quosure.. we'll be using this
+# for some of what folows
 q <- rlang::quo(a * b + c * d)
 typeof(q)
 ```
-R objects seem to implement a single class
-inheritance like the Java and C# does, not like the multi-class inheritance that
-C++ does. It also seems to implement interfaces as Java and C# do, though it
-doesn't seem to be calledthat. Interfaces mean an 
-object can mimic the behaviour of many differnt types of objects
-without have it inherit from them.
+
+In R the fact that a quosure is a `language` object means that it has certain
+behaviors. For example the `rlang` package has a number of
+functions that have a prefix of `lang_`. These functions can only be used on
+language objects.
+
+The `typeof` function, however, doesn't tell you everything about an 
+object. In R a single object may mimic the behavior of many other
+types objects.
 
 
 ```{r interfaces}
@@ -31,9 +49,12 @@ without have it inherit from them.
 qtls_what_is_it(q)
 
 ```
-This shows that a quosure mimics a formula object, so you can treat it like a
-formula. In fact a quosure stores the expression it is wrapping in the
-rhs (righthand side) of its formula.
+This shows that a quosure mimics a `formula` object, so you can treat it like a
+formula. For example, any of the functions in the `rlang` package
+that are prefixed with `f_` can be used with a `formula` object. 
+
+A formula has a right and a left hand side. The right hand side, or rhs, is used
+to store the expression that the quosure has wrapped.
 
 ```{r rhs}
 qrhs <- rlang::f_rhs(q)
@@ -42,83 +63,104 @@ qrhs
 
 Here you see the expression the quosure is wrapping in the rhs of the quosure.
 
-The typeof the righthand side (rhs) of a quosure is  language but it mimics many
-other types of objects.
+The typeof the right hand side (rhs) of a quosure is  `language` and it also 
+mimics many other types of objects.
 
 ```{r rhs2}
 typeof(qrhs)
 qtls_what_is_it(qrhs)
 ```
 Here we see that the rhs mimics an `expr` object so you can treat it as an
-expression.
+expression. This means you can use any of the functions in the `rlang`
+package with the prefix `expr_` with it.
+
+#car and cdr
 
 A language object, like the expression we are working on here,
-has some properties called car and cdr (pronounced sort of like "c-a-dr").
+has some important properties called car and cdr (pronounced sort of like "cudder").
 Don't worry about the strange
-names, they come form R's lisp heritige but their original meanings don't
+names, they come from R's lisp heritage but their original meanings don't
 apply here.
 
 These properties can contain, at least in theory, any kind of objects, even
-list objects. The rlang package gives you access to them.
+`list` objects. The `rlang` package gives you access to them.
 
 ```{r lists}
+# get the car object from the rhs of quosure we are working on
 qcar <- rlang::node_car(qrhs)
+# find out what it is
 typeof(qcar)
+# get the cdr
 qcdr <- rlang::node_cdr(qrhs)
+# find out what it is
 typeof(qcdr)
 ```
 
-Here we see that the car is a `symbol` and the cdr is a pairlist. You probably
-haven't see a pairlist before because they are not used, at least not now, in R
-applications. But for all practical purposes they are the same thing as a list
+Here, in this example, we see that the car is a `symbol` and the cdr is a
+`pairlist`. You probably haven't seen a `pairlist` before because they are
+not used, at least not now, in R
+applications. But for all practical purposes they are the same thing as a `list`
 object.
 
-That list in the cdr can contain, again in theory, any kinds of objects, 
+The list in the cdr can contain, again in theory, any kinds of objects, 
 including expression objects.
 
-Given those a cdr list with expression objects in it then via recursion this can
-be used to build a tree. In fact this would then look like a data structure we
-call a tree where each object in the tree contains a list of its children.
+Given a cdr list with expression objects in it then via recursion this can
+be used to build a tree. In fact this would make a quosure look like a data
+structure we call a tree where each object in the tree contains a list
+of its children.
 
 We see these kinds of tree data structures all over the place. Examples
 are the W3C DOM (object model of a web page and XML), the XPath model for XML,
 scopes in a programming language, JSON and on and on.
 
-But we kind of left the car behind. The car can contain any kind of object
-including a list. But a tree data structure only has a single list of
-children. Maybe, by convention, R doesn't ever put a list in the car?
+#No Ordinary Tree
+
+But we kind of left the car behind. The car can also contain any kind of object
+including a list. But an object in a tree data structure only has a single list of
+children. Maybe, by convention, R doesn't ever put a list in the car? If that
+were the case than a quosure would be a classic tree data structure.
 
 However that convention is not followed by R as we can see here...
 
-
 ```{r mulitplecar}
-# anonymous function define and executed
+# anonymous function defined and executed in place
 qf <- rlang::quo(function(x){x}(6) )
+# get is rhs, i.e. the expression
 qfrhs <- rlang::f_rhs(qf)
+# get the cdr for that expresion
 qfcdr <- rlang::node_cdr(qfrhs)
+length(qfcdr)
+# this tells us the cdr acts as list with 3 objects in it
+# get the second object from this list
 n2 <- qfcdr[[2]]
+typeof(n2)
+# n2 is a language object
+# so you can get a car from it
 n2car <- rlang::node_car(n2)
 length(n2)
+# this tells us that n2 acts as list with 2 objects in it
 ```
 
-We had to go in 2nd child of the car list of our quosure, but when we do
-we see that its car has two children. That means our quosure data structure is
-not a tree, certainly not in the conventional sense.
+So sometimes a car will have a list of children in it. That means our quosure
+data structure is not a tree, certainly not in the conventional sense.
 
 But when we say a data structure
 is a tree it is just so that we can have handy visualization to refer to in order
-to grasp the its structure without having to think about the detail of it.
+to grasp the its overall structure without having to think about all the details of it.
 But in the end objects have properties and we make use of them in any way we
-wish to fulfill the requirements of an application. OK, stepping down from
-the soapbox....  :-)
+wish to fulfill the requirements of an application. 
 
 Since the purpose of a tree is to give us a visualization that will help
 us understand a data structure without having to look at every detail of it, we
-can use a conventions that say the single list of a language element is the
-concatonation of the car and cdr lists, with the car coming first. If either
-the car or cdr does is not a list then it won't be used to build the *single*
-list of our language object. If we do that we get a tree that looks like this
-for our anonymous, executed function we just looked at.
+can use a convention that says the single list of a language object is the
+concatenation of the car and cdr lists, in that order.
+
+And as long as each
+object in the visualization shows whether it came from a the car or the cdr
+you will have a good overall picture of the data structure.
+With that in mind here is a visualization we can get 
+for that anonymous, executed in place function we just looked at.
 
 ```{r mulitreee}
 suppressPackageStartupMessages(library(DiagrammeR))
@@ -127,11 +169,49 @@ g <- qtls_plot_model(qftab)
 DiagrammeR::render_graph(g, layout="tree")
 ```
 
+The visualization is a little messy but each node in the tree is
+represented by a circle. The first line in each node is some descriptive
+information about the object node represents. The second line tells us if 
+that node came from the car or cdr of it's parent. So it's pretty
+straightforward to see the overall  structure of a quosure.
+
+If you look at the three nodes at the bottom of the tree can see that
+two of those nodes came from the car of their parent.
+
+There are other ways to visualize a tree that can present a lot more information
+without being so cluttered and make it a lot easier to understand what is
+going on inside a quosure. We'll see one of those visualizations in the
+next tutorial.
+
+#Summary
+A quosure wraps an expression by turning into a one sided formula object, 
+which the quosure can mimic.
+
+The rhs of the quosure is a language object and stores the expression that the
+quosure has wrapped.
+
+The `typeof` the rhs is `langauge`. That means that it has`car` and `cdr`
+properties. The `rlang` package has a number of functions the can be
+used to work with those properties. You can use those functions to *ferret out*
+a tree structures for a quosure.
+
+A car or a cdr might be a solitary object or it might be a list of objects. 
+
+We can represent a quosure as a tree if 
+we use a convention that says that the car and cdr are lists they are concatenated
+to make a single list.
+
+There is important kind of tree called an abstract syntax tree or AST. The
+tree structure in a quosure is **not** an AST. An AST is important because
+it is a standard way many language implementations use to make, in effect, 
+a list of directions that can be used to evaluate an expression. Fortunately
+an AST can be extracted from the "double list" tree inside a quosure.
+
+We'll see more on AST's and other topics in the tutorial on using quosures
+to *program on the language* that follows this one.
 
 
-One way to do that is the stipulate that the car list will contain no more than one object and that object will not be a language object. Only the cdr list can contain more than one object those objects might be language object.
 
-That stipulation isn't true for R though, we'll see that shortly. But, for a moment, let's  assume that representation is true.
 
-Then we can say can say that the objects in the cdr list are children of the single object in the car list. That way a language object represents two levels of nodes in our tree instead of just one level in a classic tree structure object that has just a single list of children. 
+
 
