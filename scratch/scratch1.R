@@ -1,5 +1,44 @@
 # scratch
 
+
+q <- rlang::quo(1 + 2)
+
+u1 <- rlang::UQE(q)
+rhs <- rlang::f_rhs(q)
+
+rlang::f_rhs
+
+qtls_what_is_it(u1)
+qtls_what_is_it(rhs)
+typeof(u1)
+typeof(rhs)
+identical(u1, rhs)
+
+rlang::UQE
+
+rlang::get_expr
+
+f1 <- function(x) {x}
+
+f1( 1 + 2)
+
+f1 (q)
+
+f1 (rlang::UQE(q))
+f1 (!!q)
+
+f2 <- function(x) {rlang::quo(x)}
+
+f2(q)
+f2(UQE(q))
+
+rlang::quo
+rlang::enquo
+
+u2 <- rlang::UQ(q)
+ex <- rlang::
+
+
 q <- rlang::quo(function(x = 3) { x}(9))
 tbl <- qtls_make_rlang_table(q)
 g <- qtls_plot_model(tbl)
@@ -24,8 +63,9 @@ f <- function(expr) {
 	rlang::enquo(expr)
 }
 
-q <- f(a + b)
- f(!!q)
+f(a + b)
+f(!!q)
+rlang::quo(q)
 
 tf <- function(arg) {
 	q <- rlang::enquo(arg)
