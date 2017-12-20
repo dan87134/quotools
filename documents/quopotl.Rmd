@@ -384,7 +384,7 @@ bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
 # into the bizzarro world
 bizzarro_flip2 <- function(q, op_table) {
 	# extract the rlang model component of the quosure q
-	model <- qtls_make_rlang_table(q)
+	model <- qtls_make_rlang_table2(q)
 	# this finds all the symbols in model that need to be flipped
 	symbols <-
 		dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
@@ -403,7 +403,8 @@ bizzarro_flip2 <- function(q, op_table) {
 			# find the replacement op
 			bop <- dplyr::filter(op_table, sym == op)$bizzarro_sym
 			# now flip the op in the quosure / change the expr from the quosure
-			rlang::mut_node_car(expr, rlang::sym(bop))
+			expr[[1]] <- rlang::sym(bop)
+			#qtls_mut_node_car(expr, rlang::sym(bop))
 		}, op_tbl = bizzarro_op)
 }
 barithmetic2 <- function(expr, op_table) {

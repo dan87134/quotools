@@ -86,9 +86,110 @@ make_outline_plot <- function(tbl, key_column, ...) {
 }
 otree <- qtls_make_outline_plot(tbl, id, expr_text, id, source, expr_type)
 
+
+rlang::lang_head
+
+qtls_what_is_it(q2)
+
+q2 <- rlang::quo(a * b + c * d /2L + 2)
+
+typeof(q2)
+class(q2)
+c(stringr::str_c(class(q2), collapse = ", "))
+
+tbl2a <- qtls_make_rlang_table(q2)
+otree2 <- qtls_make_outline_plot(tbl2a, id, expression, source, expr_type)
+writeLines(otree2)
+g <- qtls_plot_model(tbl2a)
+DiagrammeR::render_graph(g, layout="tree")
+
+q3 <- rlang::quo(function(x){x}(8) )
+tbl3 <- qtls_make_rlang_table(q3)
+otree3 <- qtls_make_outline_plot(tbl3, id, expression, id, source)
+writeLines(otree3)
+g <- qtls_plot_model(tbl3)
+DiagrammeR::render_graph(g, layout="tree")
+
+ex <- rlang::get_expr(q2)
+qtls_what_is_it(ex)
+car <- rlang::node_car(ex)
+qtls_what_is_it(car)
+
+cdr <- rlang::node_cdr(ex)
+qtls_what_is_it(cdr)
+length(cdr)
+
+ex1 <- cdr[[1]]
+qtls_what_is_it(ex1)
+
+ex2 <- cdr[[2]]
+qtls_what_is_it(ex2)
+
+
+q2 <- rlang::quo(a * b + c * d /2L + 2)
+ex <- rlang::get_expr(q2)
+
+length(ex)
+
+l1 <- ex[[1]]
+l2 <- ex[[2]]
+l3 <- ex[[3]]
+
+qtls_what_is_it(l1)
+qtls_what_is_it(l2)
+qtls_what_is_it(l3)
+
+
+q3 <- rlang::quo(function(x){x}(8) )
+ex <- rlang::get_expr(q3)
+
+length(ex)
+
+l1 <- ex[[1]]
+l2 <- ex[[2]]
+l3 <- ex[[3]]
+l4 <- ex[[4]]
+
+length(l1)
+length(l2)
+length(l3)
+length(l4)
+
+l3[[1]]
+l3[[2]]
+
+car4 <- rlang::lang_head(l4)
+
+
+
+
+length(ex)
+
+l1 <- ex[[1]]
+l2 <- ex[[2]]
+l3 <- ex[[3]]
+l4 <- ex[[4]]
+
+qtls_what_is_it(l1)
+qtls_what_is_it(l2)
+qtls_what_is_it(l3)
+qtls_what_is_it(l4)
+
+car <- rlang::lang_head(ex)
+length(car)
+
+cdr <- rlang::lang_tail(ex)
+length(cdr)
+
+x3
+
+writeLines(otree)
+
 purrr::walk(otree, function(line) {
 	print(line)
 })
+
+
 
 
 paste, "\n", "b")
@@ -167,7 +268,6 @@ ex2[2]
 
 rlang::get_expr(ex2)
 q3 <- rlang::quo(1 + 2)
-rlang::quo(+)
 
 length(q3)
  x1 <- q3[1]
@@ -199,6 +299,58 @@ qtls_what_is_it(x3)
 length(x3)
 x3[1]
 
+
+q <- rlang::quo(1 + 2)
+length(q)
+e1 <- q[[1]]
+e2 <- q[[2]]
+
+length(e2)
+e2_1 <- e2[[1]]
+e2_2 <- e2[[2]]
+e2_3 <- e2[[3]]
+
+e2[[1]] <- rlang::sym("-")
+q
+q <- rlang::quo(1 + 2)
+q2 <- rlang::duplicate(q)
+length(q2)
+e1 <- q2[[1]]
+e2 <- q2[[2]]
+e2[[1]] <- rlang::sym("-")
+rlang::eval_tidy(q2)
+
+q2[[2]][[1]] <- rlang::sym("-")
+
+p <- c(2,1)
+q2[[p]] <- rlang::sym("-")
+
+
+ex <- rlang::parse_quosure("q2[[2]][[1]] <- rlang::sym(\"-\"))")
+
+rlang::eval_tidy(ex)
+rlang::eval_tidy(q2)
+
+
+alist(q, 2, 1)
+
+
+
+
+rlang::eval_tidy(q)
+
+
+make_path <-function(tbl, current_id) {
+	current_row <- dplyr::filter(tbl, current_id == id)
+	print(current_row$id)
+	if (nrow(current_row) == 0) {
+		return(current_id)
+	}
+	return (c(current_row$id, make_path(tbl, current_row$parent)))
+}
+
+
+make_path(tbl2a, 5)
 
 
 

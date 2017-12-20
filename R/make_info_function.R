@@ -8,7 +8,7 @@ qtls_make_info_function <- function(tbl, key_column, ...) {
 	qkey_text <- rlang::expr_text(qkey_expr)
 	q <- quos(...)
 	columns <- purrr::map_chr(q, function(q) {
-		rhs <- rlang::f_rhs(q)
+		rhs <- rlang::get_expr(q)
 		rlang::expr_text(rhs)
 	})
 	function(tbl, key) {
