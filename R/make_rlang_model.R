@@ -103,7 +103,7 @@ make_rlang_table <- function(
 
 
 
-qtls_make_rlang_table <- function(
+qtls_make_rlang_model <- function(
 	q_or_expr,
 	parent = 0L,
 	context = new.env() ,
@@ -135,24 +135,24 @@ qtls_make_rlang_table <- function(
 	context$tbl <- dplyr::bind_rows(context$tbl, tibble::tibble(
 		id = c(context$pass),
 		parent = c(parent),
-		address = c(pryr::address(e)),
+		path = list(path),
 		expression = if (!fcn_def & !dictionaryish)  list(e) else  c(NA),
 		expr_type = c(typeof(e)),
 		expr_class = c(stringr::str_c(class(e), collapse = ", ")),
 		order = c(order),
-		path = list(path),
 		expr_text = rlang::expr_text(e),
 		label =  if (!fcn_def) stringr::str_c(
 			label_fix(rlang::expr_text(e)), "\n", order,
 		 	collapse = "") else c(stringr::str_c("srcdef\n", order)),
-		what_is_expr = list(qtls_what_is_it(e))
+		what_is_expr = list(qtls_what_is_it(e)),
+		address = c(pryr::address(e))
 	)
 	)
 	parent <- context$pass
 	context$pass <- context$pass + 1
 	if (length(e) > 1) {
 		for(index in 1:length(e)) {
-			qtls_make_rlang_table(e[[index]], order = index,
+			qtls_make_rlang_model(e[[index]], order = index,
 														context = context,
 														parent = parent,
 														path = c(path, index))

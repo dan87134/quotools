@@ -15,20 +15,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Quosures enable *Programming on the Language*. This tutorial looks at how they
+Quosures enable *Programming on the Language*. This tutorial looks at way to
 do that.
 
-*Programming on the Language* is a way of circumventing R's standard evaluation of an
-expression and instead use your own code to interpret that expession and then use
-that interpretation to perform what ever operations you want. This is called
-non-standard evaluation or NSE. Its done to embded
-a custom programming langage inside of an R expression.
+*Programming on the Language* is a way of circumventing how R evaluates an
+expression and so that you that evaluation any way you want. This is called
+non-standard evaluation or NSE, because you will not be evaluating the
+the way that R does.
 
-An example
-of this is dplyr::filter which implements a simple programming language for
-choosing rows from a table that is more straightforward than the R programming language
-for doing that. For example:
+For example when R sees function call like...
 
+`f(tbl, weight < 94, length > 12)`
+
+... it will evaluate the expression in the second argument and pass TRUE to `f`
+if the value of the variable `weight` is less than 94 but otherwise pass FALSE
+to 'f'. And likewise for the third argument. This is called standard evaluation
+because that is how R handles arguments in a function call.
+
+The `dplyr::filter` function uses evaluates the same syntax in a completly
+different way by using quosures and non-standard valuation.
+
+ `filter(tbl, weight < 94, length > 12)`
 ```{r simplefilter}
 suppressPackageStartupMessages(library(dplyr))
 tbl <- tibble::tribble(
@@ -38,48 +45,146 @@ tbl <- tibble::tribble(
 	12, 30, 92,
 	15, 20, 99
 )
-# R language for a filter
-tbl[tbl["weight"] < 94 & tbl["length"] > 12, ]
-# dplyr language for a filter
+# dplyr syntax for choosing rows
 filter(tbl, weight < 94, length > 12)
 ```
 
-The R standard evaluation syntax for a filter 
+`dplyr::filter` doesn't evaluate each argument individually as R standard
+evaluation would. Instead it interprets `weight` and `length` as columns of tbl
+and then uses the second and third arguments as predicates used to choose rows
+from `tbl`.
+
+You can, of course, does same thing with R standard evaluation to do the same
+thing, like this:
+
+```{R SE}
+tbl[tbl["weight"] < 94 & tbl["length"] > 12, ]
+```
+
+and you get the same result.
+
+But the R syntax for chosing rows  
 has more of what is sometimes called *programming ceremony*
-than the dplyr syntax. Programming ceremony is the text you need
+than the `dplyr::filter` syntax. Programming ceremony is the text you need
 to type into an expression that has little to do with telling R you what it is
 want expression to do.
 
-In the R standard evaluation syntax in this example the
+In the R syntax in this example the
 programing ceremony is `tbl` repeated three times, the quotes and square
 brackets and even that one *dangling* comma. All of those things are necessary
-to get the filter to do what you want it to do but do nothing to clarify what
-you want the filter to do. Get one of those pieces of ceremony wrong and only
-if you are lucky you will get an error... if you are unlucky the statement will
-just silently produce incorrect data.
+to get the R to choose the rows you want but does nothing to clarify what
+you want the R to do.
 
-`dplyr::filter` circumvents the R standard evaluation of its second and third
-arguments in this example. It interprets the expressions `weight < 94` 
-and `length > 12` with it's own code to associate them with `tbl` and produce the same results 
-as the R standard filter.
+`dplyr::filter` has a syntax with much less ceremony and that is arguably more
+straightforward to use. It is also reminiscent of the syntax that SQL
+databases use to choose rows.
 
-Here dplyr::filter is using NSE to embed its own programing language for describing how to 
-choose rows in a table.
+`dplyr::filter` highlights a key reason making NSE functions... they let you
+create a syntax for arguments of a functions that are more straightforward
+and familiar to users of those functions.
 
-One of the powerful things about using NSE like this is that in many cases, maybe most,
-you don't need to know how NSE works, or even that quosures exist, to make use
-of an embeded custom language. One of
-these cases is when you are using functions that use NSE, like `dplyr::filter`,
-from the command line to explore data.
-
-But if you are using NSE functions in a script or you are implementing your own
-custom language then you will need to understand how NSE functions work.
-
-And even if you are using it from the command line you may run into edge cases
-where a good understanding of how NSE functions will be a big help.
+This tutorial is about a way to use quosures to make NSE functions like
+`dplyr::filter`. It also covers the issues you can run into when using
+NSE functions. 
 
 
-##Language  Operational Components
+
+##Object Models
+
+In order to *program on the language* you need few things. 
+
+First of all you need some way to prevent R from doing a standard evaluation
+of the arguments in a function. There are a number of reasons for this be
+the most obvious it that R will often produce errors when give an
+expression that wasn't meant to be evaluated.
+
+```{r raw1, error = TRUE}
+f1 <- function(expr) {
+	as.character(expr)
+}
+
+f1(az + bz) 
+```
+
+The error occurs because `'as.character` function made R do a standard
+evaluation of `expr` and R couldn't find `az`.  
+
+Quosures give you a way of preventing R from doing a standard evaluation and
+give you access to the text of the arguments passed into a function, like this:
+
+```{r raw2}
+f2 <- function(expr) {
+	q <- rlang::enquo(expr)
+}
+
+f2(az + bz) 
+```
+
+No errors occured when f2 was executed because the `rlang::enquo` doesn't make
+R do a standard evaluation of `expr`.
+
+`rlang::enquo` is one of many functions that produce a quosure. The quosure
+gives you access to a number of things. One is the literal text of an 
+expression. For example:
+
+```{r raw3}
+f3 <- function(expr) {
+	q <- rlang::enquo(expr)
+	rlang::get_expr(q)
+}
+
+f3(az + bz) 
+```
+
+Another thing a quosure gives you access to is an object model for a quosure. In
+simple terms for R an object model is just an elaborate `list` that breaks out
+the details of an expression. Here is an example that breaks out the operator 
+between `az` and `bz` from expr:
+
+```{r obj1}
+f4 <- function(expr) {
+	q <- rlang::enquo(expr)
+	q[[c(2,1)]]
+}
+
+f4(az + bz) 
+
+```
+
+The syntax used in the subsetting of `q` might not be familiar but we'll cover
+what it is doing later in this tutorial.
+
+The important thing illustrated here is that it is possible to break down an
+expression into the pieces that make it up. In programming this is called
+*parsing* an expression.
+
+Typically when you *program on the language* your are going to have to parse
+expressions. And the really important thing here is that you don't write code
+to parse the raw text of the expression... in fact that would be very
+difficult to do. A quosure will do all that work for you.
+
+Not only can you break an expression into pieces that make it up you can change
+it too. Here is an example that does that.
+
+```{r obj2}
+f5 <- function(expr) {
+	q <- rlang::enquo(expr)
+	q[[c(2,1)]] <- rlang::sym("-")
+	q
+}
+
+f5(az + bz) 
+
+```
+
+And you can see here that `f5` has change `az + bz` into `az - bz`.
+
+In fact you could have completely changed the expression if wanted to.
+
+
+
+have to write code to parse an expression
+
 
 Language operational components isn't a term from Computer Science, it just, I 
 think, describes the parts of a language in terms of how a program, for example written
@@ -352,18 +457,18 @@ for it's plots... ha, ha, just kidding :-).
 
 ### Bizzarro World Arithmetic again, Using Model
 
-Now we are going to use the model component of R expressions that the 
+Now we are going to use the object model of R expressions that the 
 `rlang` package uses,
-to implement bizzarro arithmetic. This example is going use some of the code
-from the files that can be downloaded for this tutorial. The details of how the
-functions in this code work won't be explained until later in this tutorial.
+to implement bizzarro arithmetic. This example uses some code
+from the files that can be downloaded for this tutorial. The details of how this
+this code works won't be fully explained until later in this tutorial.
 
-This example uses `qtls_make_rlang_table` to extract the model component from
-a quosure.
+This example uses `qtls_make_rlang_model` to extract the object model of an
+expression from a quosure. Shortly we'll see that that model is a table.
 
 It  then analyzes the model to find all the arithmetic operations
-in it and then changes them to their Bizzarro World counterpart. For example 
-`+` is changed to `- in the model.
+in it and then changes each of them to its Bizzarro World counterpart. For
+example `+` is changed to `- in the model.
 
 After that it just let's R evaluate the modified model.
 
@@ -380,60 +485,56 @@ bizzarro_op <-
 		"-", "=",
 		"*" , "/",
 		"/", "*")
-#flip arithmetic operators into the bizzarro world
-bizzarro_flip <- function(q, op_table) {
-	# extract the rlang model of the quosure q
-	model <- qtls_make_rlang_table(q)
-	# need to pass quosure by reference
-	qenv <- new.env(parent = rlang::get_env(q))
+#flip arithmetic operators into the Bizzarro World
+bizzarro_flip <- function(q) {
+	# get the rlang model of the quosure q
+	model <- qtls_make_rlang_model(q)
+	# we'll need to pass quosure by reference
+	qenv <- new.env()
 	qenv$q <- q
-	# this finds all the symbols in model that need to be flipped
+	# look up operators in the model that need to be flipped
 	symbols <- dplyr::filter(
 		model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
-	purrr::walk(
-		# walk the paths to each symbol
-		symbols$path,
-		function(path, qenf) {
-			# find Bizzarro World counterpart
+	# walk the paths to each operator
+	purrr::walk(symbols$path,
+		function(path) {
+			# find Bizzarro World counterpart for the operator
 			bop <- dplyr::filter(bizzarro_op, sym == qenv$q[[path]])$bizzarro_sym
 			# flip it to bizzarro counterpart
 			qenv$q[[path]] <- rlang::sym(bop)
-		}, qenv)
+		})
 	 qenv$q
 }
-barithmetic <- function(expr, op_table) {
+barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
-	q <- bizzarro_flip(q, op_table)
+	q <- bizzarro_flip(q)
 	rlang::eval_tidy(q)
 }
-barithmetic(3 + 1, bizzarro_op)
+barithmetic(3 + 1)
 # hmmm??
 #
-barithmetic(3 * 4 + 1, bizzarro_op)
+barithmetic(3 * 4 + 1)
 #yikes, that's bizzare!!!!
 ```
 
 Same bizzarro results, but this time we bizzarro'd all the arithmetic operators
-in the model component and then let R do the evaluation of the quosure instead
-of overrding the arithmetic operators in the context component.
+in the rlang object model and then gave it back to R to do the evaluation.
 rlang::eval_tidy is doing the evaluation of the quosure with the modified model.
 
-The function `qtls_make_rlang_table` converts the `rlang` model of an expession
-into a table. The only rows we care about are ones where the expression
-is a symbol.
+
+##Introduction to the `rlang` Object Model
 
 
-##Introduction to the `rlang` Model Component
 
 Here is the
-content of the model table we used for the `3 * 4 + 1` expression we used
-in one of the bizzarro examples
+object model we used for the `3 * 4 + 1` expression we used
+in the last bizzarro arithmetic example.
 
 ```{r showtable}
 suppressPackageStartupMessages(library(quotools))
 show_model_table <- function(expr) {
 	q <- rlang::enquo(expr)
-	print(qtls_make_rlang_table(q))
+	print(qtls_make_rlang_model(q))
 }
 show_model_table(3 * 4 + 1)
 ```
@@ -462,7 +563,7 @@ suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(DiagrammeR))
 q <- rlang::quo(a * b + c * d )
-model <- qtls_make_rlang_table(q)
+model <- qtls_make_rlang_model(q)
 g <- qtls_plot_model(model)
 DiagrammeR::render_graph(g, layout = "tree")
 ```
