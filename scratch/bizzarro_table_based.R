@@ -44,3 +44,45 @@ barithmetic2(3 + 1, bizzarro_op)
 #
 barithmetic2(3 * 4 + 1, bizzarro_op)
 #yikes, that's bizzare!!!!
+
+
+# impl that uses path to modify expression
+bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
+																"+", "-",
+																"-", "=",
+																"*" , "/",
+																"/", "*")
+# use bizzarro_flip to flip arithmetic operators
+# into the bizzarro world
+bizzarro_flip2 <- function(q, op_table) {
+	# extract the rlang model component of the quosure q
+	model <- qtls_make_rlang_table(q)
+	qenv <- new.env()
+	qenv$q <- q
+	# this finds all the symbols in model that need to be flipped
+	symbols <-
+		dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+	# symbols are not processed, the expressions they came from are
+	purrr::walk(
+		# walk the path to each symbol
+		symbols$path,
+		function(path, qenf) {
+			symbol_expr <- qenv$q[[path]]
+			bop <- dplyr::filter(bizzarro_op, sym == symbol_expr)$bizzarro_sym
+			qenv$q[[path]] <- rlang::sym(bop)
+		}, qenv)
+	 qenv$q
+}
+barithmetic2 <- function(expr, op_table) {
+	q <- rlang::enquo(expr)
+	q <- bizzarro_flip2(q, op_table)
+	rlang::eval_tidy(q)
+}
+barithmetic2(3 + 1, bizzarro_op)
+# hmmm??
+#
+barithmetic2(3 * 4 + 1, bizzarro_op)
+#yikes, that's bizzare!!!!
+
+
+

@@ -106,10 +106,10 @@ tbl2a <- qtls_make_rlang_table(q2)
 
 tbl2a[[tbl2a[[6,"path"]]]]
 
-p <- tbl2a[6,]$path[[1]]
+p <- tbl2a[14,]$path[[1]]
 
 tbl2a[[2]][[3]]
-q2[[c(2,2,1)]]
+q2[[p]]
 tbl2a[["id"]]
 
 tbl2a <- qtls_make_rlang_table(q2)
