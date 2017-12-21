@@ -373,11 +373,13 @@ suppressPackageStartupMessages(library(quotools))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
 # regular arithmetic operators and Bizzarro World counterparts
-bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
-																"+", "-",
-																"-", "=",
-																"*" , "/",
-																"/", "*")
+bizzarro_op <- 
+	tibble::tribble(
+		~ sym, ~ bizzarro_sym,
+		"+", "-",
+		"-", "=",
+		"*" , "/",
+		"/", "*")
 #flip arithmetic operators into the bizzarro world
 bizzarro_flip <- function(q, op_table) {
 	# extract the rlang model of the quosure q
@@ -386,15 +388,14 @@ bizzarro_flip <- function(q, op_table) {
 	qenv <- new.env(parent = rlang::get_env(q))
 	qenv$q <- q
 	# this finds all the symbols in model that need to be flipped
-	symbols <- dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+	symbols <- dplyr::filter(
+		model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
 	purrr::walk(
-		# walk the path to each symbol
+		# walk the paths to each symbol
 		symbols$path,
 		function(path, qenf) {
-			# get op expression using path
-			symbol_expr <- qenv$q[[path]]
 			# find Bizzarro World counterpart
-			bop <- dplyr::filter(bizzarro_op, sym == symbol_expr)$bizzarro_sym
+			bop <- dplyr::filter(bizzarro_op, sym == qenv$q[[path]])$bizzarro_sym
 			# flip it to bizzarro counterpart
 			qenv$q[[path]] <- rlang::sym(bop)
 		}, qenv)
