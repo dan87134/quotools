@@ -91,6 +91,10 @@ rlang::lang_head
 
 qtls_what_is_it(q2)
 
+
+p <- c(1L)
+p <- c(1L, p)
+
 q2 <- rlang::quo(a * b + c * d /2L + 2)
 
 typeof(q2)
@@ -98,6 +102,18 @@ class(q2)
 c(stringr::str_c(class(q2), collapse = ", "))
 
 tbl2a <- qtls_make_rlang_table(q2)
+
+
+tbl2a[[tbl2a[[6,"path"]]]]
+
+p <- tbl2a[6,]$path[[1]]
+
+tbl2a[[2]][[3]]
+q2[[c(2,2,1)]]
+tbl2a[["id"]]
+
+tbl2a <- qtls_make_rlang_table(q2)
+
 otree2 <- qtls_make_outline_plot(tbl2a, id, expression, source, expr_type)
 writeLines(otree2)
 g <- qtls_plot_model(tbl2a)

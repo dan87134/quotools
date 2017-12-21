@@ -108,7 +108,7 @@ qtls_make_rlang_table <- function(
 	parent = 0L,
 	context = new.env() ,
 	order = 1L,
-	source = "root") {
+	path = vector(mode = "integer")) {
 	if (is.null(context$tbl)) {
 		context$tbl <-
 			tibble::tribble(
@@ -135,12 +135,12 @@ qtls_make_rlang_table <- function(
 	context$tbl <- dplyr::bind_rows(context$tbl, tibble::tibble(
 		id = c(context$pass),
 		parent = c(parent),
-		#source = c(source),
 		address = c(pryr::address(e)),
 		expression = if (!fcn_def & !dictionaryish)  list(e) else  c(NA),
 		expr_type = c(typeof(e)),
 		expr_class = c(stringr::str_c(class(e), collapse = ", ")),
 		order = c(order),
+		path = list(path),
 		expr_text = rlang::expr_text(e),
 		label =  if (!fcn_def) stringr::str_c(
 			label_fix(rlang::expr_text(e)), "\n", order,
@@ -155,7 +155,7 @@ qtls_make_rlang_table <- function(
 			qtls_make_rlang_table(e[[index]], order = index,
 														context = context,
 														parent = parent,
-														source = "???")
+														path = c(path, index))
 
 		}
 
