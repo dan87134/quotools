@@ -129,29 +129,18 @@ R do a standard evaluation of `expr`. It also returns an object called a
 quosure.
 
 There a number of functions in the `rlang` package that can be used with 
-quosures. `rlang::get_expr` is on the return the literal text of the expresson.
+quosures. `rlang::get_expr` is one and it returns the literal text of the expresson.
 
-In theory that is all you 
-need to interpret the expression like `rlang::filter does with its arguments. In
-practice though the raw text is to hard work with most of the time. And there
-are better way access the information in the expression, which we will see as
+In theory all you is that literal text of the expression
+to interpret the expression like `rlang::filter does with its arguments. We
+see an example that does this last. Hoever in
+practice the literal text is to hard work with and there
+are better ways access the information in the expression, which we will see as
 this tutorial progresses.
 
-`rlang::enquo` is one of many functions that produce a quosure. The quosure
-gives you access to a number of things. One is the literal text of an 
-expression. For example:
-
-```{r raw3}
-f3 <- function(expr) {
-	q <- rlang::enquo(expr)
-	rlang::get_expr(q)
-}
-
-f3(az + bz) 
-```
 
 Another thing a quosure gives you access to is an object model for a quosure. In
-simple terms for R an object model is just an elaborate `list` that breaks out
+simple terms for R an object model is just a `list` that breaks out
 the details of an expression. Here is an example that breaks out the operator 
 between `az` and `bz` from expr:
 
