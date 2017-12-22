@@ -35,7 +35,7 @@ if the value of the variable `weight` is less than 94 but otherwise pass FALSE
 to 'f'. This is called standard evaluation
 because that is the standard way R handles arguments in a function call.
 
-The `dplyr::filter` function uses evaluates the same syntax in a completly
+The `dplyr::filter` function evaluates the same syntax in a completly
 different way by using quosures and non-standard valuation.
 
  `filter(tbl, weight < 94, length > 12)`
@@ -52,13 +52,12 @@ tbl <- tibble::tribble(
 filter(tbl, weight < 94, length > 12)
 ```
 
-`dplyr::filter` doesn't evaluate each argument, like `weight < 94` individually
+`dplyr::filter` doesn't evaluate each argument, like `weight < 94`, individually
 as R standard evaluation would. Instead it interprets `weight` and `length` as 
 columns of tbl and then uses the second and third arguments as predicates used
 to choose rows from `tbl`.
 
-You can, of course, does same thing with R standard evaluation to do the same
-thing, like this:
+You can, of course, do the same thing with R standard evaluation, like this:
 
 ```{R SE}
 tbl[tbl["weight"] < 94 & tbl["length"] > 12, ]
@@ -72,7 +71,7 @@ than the `dplyr::filter` syntax. Programming ceremony is the text you need
 to type into an expression that has little to do with telling R you what it is
 want expression to do.
 
-In the R syntax in this example the
+In the R standard evaluation example the
 programing ceremony is `tbl` repeated three times, the quotes and square
 brackets and even that one *dangling* comma. All of those things are necessary
 to get the R to choose the rows you want but does nothing to clarify what
@@ -83,22 +82,22 @@ straightforward to use. It is also reminiscent of the syntax that SQL
 databases use to choose rows.
 
 `dplyr::filter` highlights a key reason making NSE functions... they let you
-create a syntax for arguments of a functions that are more straightforward
-and familiar to users of those functions.
+create a syntax for arguments that is better adapted to accessing data
+in table than standard evaluation and that is similar to the syntax used
+to access data in an SQL database that many programmers are
+already familiar with.
 
 This tutorial is about a way to use quosures to make NSE functions like
 `dplyr::filter`. It also covers the issues you can run into when using
 NSE functions. 
-
-
 
 ##Object Models
 
 In order to *program on the language* you need few things. 
 
 First of all you need some way to prevent R from doing a standard evaluation
-of the arguments in a function. There are a number of reasons for this be
-the most obvious it that R will often produce errors when give an
+of the arguments in a function. There are a number of reasons for this but
+the most obvious it that R will often produce errors when given an
 expression that wasn't meant to be evaluated.
 
 ```{r raw1, error = TRUE}
@@ -112,8 +111,9 @@ f1(az + bz)
 The error occurs because `'as.character` function made R do a standard
 evaluation of `expr` and R couldn't find `az`.  
 
-Quosures give you a way of preventing R from doing a standard evaluation and
-gives you access to the text of the arguments passed into a function, like this:
+You prevent R from doing a standard evaluation by only using functions that 
+don't make R do a standard evaluation. Later we will see that there are
+quite of few of these but `rlang::enquo` is one of them.
 
 ```{r raw2}
 f2 <- function(expr) {
@@ -125,9 +125,13 @@ f2(az + bz)
 ```
 
 No errors occured when f2 was executed because the `rlang::enquo` doesn't make
-R do a standard evaluation of `expr`.
+R do a standard evaluation of `expr`. It also returns an object called a 
+quosure.
 
-And you can get the literal text of the expression. In theory that is all you 
+There a number of functions in the `rlang` package that can be used with 
+quosures. `rlang::get_expr` is on the return the literal text of the expresson.
+
+In theory that is all you 
 need to interpret the expression like `rlang::filter does with its arguments. In
 practice though the raw text is to hard work with most of the time. And there
 are better way access the information in the expression, which we will see as

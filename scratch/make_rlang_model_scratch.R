@@ -32,6 +32,16 @@ tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+qb <- qa[[2]]
+
+qc <- `!!`(qb)
+tbl <- qtls_make_rlang_model(qc)
+g <- qtls_plot_model(tbl)
+DiagrammeR::render_graph(g, layout="tree")
+
+typeof(qc)
+qtls_what_is_it(qc)
+
 qa <- rlang::quo(a * "b" + 7 * d - lim(x + 3))
 tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_ast(tbl)
