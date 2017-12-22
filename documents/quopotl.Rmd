@@ -15,22 +15,25 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Quosures enable *Programming on the Language*. This tutorial looks at way to
-do that.
+Quosures enable *Programming on the Language*. This tutorial looks what that
+means and how to do it.
 
 *Programming on the Language* is a way of circumventing how R evaluates an
-expression and so that you that evaluation any way you want. This is called
-non-standard evaluation or NSE, because you will not be evaluating the
-the way that R does.
+expression in the argument of a function that you that evaluation any way you
+want. This is called non-standard evaluation or NSE, because you will not be
+evaluating the way that R does.
+
+*Programming on the Language* is useful because it lets you, in effect, extend
+the R language with syntaxes that better reflect a particular problem domain.
 
 For example when R sees function call like...
 
-`f(tbl, weight < 94, length > 12)`
+`f(tbl, weight < 94)`
 
 ... it will evaluate the expression in the second argument and pass TRUE to `f`
 if the value of the variable `weight` is less than 94 but otherwise pass FALSE
-to 'f'. And likewise for the third argument. This is called standard evaluation
-because that is how R handles arguments in a function call.
+to 'f'. This is called standard evaluation
+because that is the standard way R handles arguments in a function call.
 
 The `dplyr::filter` function uses evaluates the same syntax in a completly
 different way by using quosures and non-standard valuation.
@@ -49,10 +52,10 @@ tbl <- tibble::tribble(
 filter(tbl, weight < 94, length > 12)
 ```
 
-`dplyr::filter` doesn't evaluate each argument individually as R standard
-evaluation would. Instead it interprets `weight` and `length` as columns of tbl
-and then uses the second and third arguments as predicates used to choose rows
-from `tbl`.
+`dplyr::filter` doesn't evaluate each argument, like `weight < 94` individually
+as R standard evaluation would. Instead it interprets `weight` and `length` as 
+columns of tbl and then uses the second and third arguments as predicates used
+to choose rows from `tbl`.
 
 You can, of course, does same thing with R standard evaluation to do the same
 thing, like this:
