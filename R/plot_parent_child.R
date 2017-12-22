@@ -37,6 +37,9 @@ qtls_plot_model <- function(tbl, root_node = 1) {
 			if(nrow(child_rows) == 0) {
 				color = "green"
 			}
+			if(current_id == 1) {
+				color = "orange"
+			}
 			label <- stringr::str_replace_all(label, "\"", "|")
 			context$graph <-
 				DiagrammeR::add_node(context$graph, label = label, color = color)

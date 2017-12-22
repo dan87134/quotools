@@ -40,17 +40,25 @@ DiagrammeR::render_graph(g, layout="tree")
 
 
 qa <- rlang::quo(a * b + 7 * d)
-tbl <- qtls_make_rlang_table(qa)
-g <- qtls_plot_ast(tbl)
+tbl <- qtls_make_rlang_model(qa)
+g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
 
 
-qa <- rlang::quo(function(x) { x })
-tbl <- qtls_make_rlang_table(qa)
-g <- qtls_plot_ast(tbl)
+qa <- rlang::quo(function(x) { x = 9})
+tbl <- qtls_make_rlang_model(qa)
+l <- qtls_make_outline_plot(tbl, id, id, parent, expr_type, expr_text)
+writeLines(l)
+g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+
+g <- qtls_plot_model(tbl)
+DiagrammeR::render_graph(g, layout="tree")
+
+x <- qa[[c(2,3,1)]]
+ty
 qa <- rlang::quo(1:3 + a)
 tbl <- qtls_make_rlang_table(qa)
 g <- qtls_plot_ast(tbl)

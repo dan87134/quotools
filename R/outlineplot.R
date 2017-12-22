@@ -12,6 +12,8 @@ qtls_make_outline_plot <- function(tbl, key_column, ...) {
 			current_id <- dplyr::filter(tbl, parent == 0)$id
 		}
 		info <- info_function(tbl, current_id)
+		# make one line
+		info <- stringr::str_replace_all(info, "\\n", " ")
 		oenv$output <- c(oenv$output,
 										 stringr::str_c(stringr::str_dup("--", depth), info, collapse = ""))
 		children <- dplyr::filter(tbl, parent == current_id)

@@ -12,7 +12,7 @@ qtls_make_info_function <- function(tbl, key_column, ...) {
 		rlang::expr_text(rhs)
 	})
 	function(tbl, key) {
-		values <- map_chr(columns, function(column, tbl, id) {
+		values <- purrr::map_chr(columns, function(column, tbl, id) {
 			stringr::str_c(column, ":", as.character(
 				tbl[tbl[qkey_text] == key, column][[1]], collapse = ""))
 		}, tbl, id)

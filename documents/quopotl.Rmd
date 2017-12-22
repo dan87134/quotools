@@ -110,11 +110,12 @@ The error occurs because `'as.character` function made R do a standard
 evaluation of `expr` and R couldn't find `az`.  
 
 Quosures give you a way of preventing R from doing a standard evaluation and
-give you access to the text of the arguments passed into a function, like this:
+gives you access to the text of the arguments passed into a function, like this:
 
 ```{r raw2}
 f2 <- function(expr) {
 	q <- rlang::enquo(expr)
+	rlang::get_expr(q)
 }
 
 f2(az + bz) 
@@ -122,6 +123,12 @@ f2(az + bz)
 
 No errors occured when f2 was executed because the `rlang::enquo` doesn't make
 R do a standard evaluation of `expr`.
+
+And you can get the literal text of the expression. In theory that is all you 
+need to interpret the expression like `rlang::filter does with its arguments. In
+practice though the raw text is to hard work with most of the time. And there
+are better way access the information in the expression, which we will see as
+this tutorial progresses.
 
 `rlang::enquo` is one of many functions that produce a quosure. The quosure
 gives you access to a number of things. One is the literal text of an 
@@ -177,7 +184,7 @@ f5(az + bz)
 
 ```
 
-And you can see here that `f5` has change `az + bz` into `az - bz`.
+And you can see here that `f5` has changed `az + bz` into `az - bz`.
 
 In fact you could have completely changed the expression if wanted to.
 

@@ -114,7 +114,7 @@ tbl2a[["id"]]
 
 tbl2a <- qtls_make_rlang_table(q2)
 
-otree2 <- qtls_make_outline_plot(tbl2a, id, expression, source, expr_type)
+otree2 <- qtls_make_outline_plot(tbl2a, id, parent, expr_type, expr_text)
 writeLines(otree2)
 g <- qtls_plot_model(tbl2a)
 DiagrammeR::render_graph(g, layout="tree")
