@@ -19,12 +19,49 @@ Quosures enable *Programming on the Language*. This tutorial looks what that
 means and how to do it.
 
 *Programming on the Language* is a way of circumventing how R evaluates an
-expression in the argument of a function that you that evaluation any way you
-want. This is called non-standard evaluation or NSE, because you will not be
-evaluating the way that R does.
+expression in function argument so that you can evaluate it any way you
+want. This called non-standard evaluation, or NSE, of an argument because
+you will not be evaluating it the way standard way that R does. A function that
+handles some of its arguments this way is a called an NSE function.
 
 *Programming on the Language* is useful because it lets you, in effect, extend
-the R language with syntaxes that better reflect a particular problem domain.
+the R language with a custom syntaxes that match a particular problem domain
+better than the stardard R syntax does.
+
+Here is a trival example of where R provides syntax that better matches
+a problem domain.
+
+This example shows the fundamental way of doing arithmetic in R to sum up 1, 2, 
+and 3.
+
+```{r dsl1}
+`+`(`+`(1, 2), 3)
+```
+
+It's unlikely you have ever done addition this way, it's just too clumsy 
+and strange looking compared to the way you learned to do addition in school.
+
+By the way, just as an historical note, this is how you would add numbers in
+Lisp or in an HP RPN calculator http://www.hpmuseum.org/rpn.htm.
+
+Of course, in practice, you would do this sum as: 
+
+```{r dsl2}
+1 + 2 + 3
+```
+
+Now R doesn't use NSE to do this because the implementors of R we able to add
+arithmetic as a native syntax to R. The important take away from this example
+is that adding arithmetic syntax to R didn't add anything to the computational
+capabilites of R, it just made it easier to use in the problem domain of
+doing arithmetic calculations.
+
+Using quosures to *Programming on the Language* lets you add
+custom syntaxes for arguments of functions without changing the implementation
+of R. This way you can make R easier to use in the problem domains you
+deal with.
+
+Now let's start looking at how all this works.
 
 For example when R sees function call like...
 
@@ -54,7 +91,7 @@ filter(tbl, weight < 94, length > 12)
 
 `dplyr::filter` doesn't evaluate each argument, like `weight < 94`, individually
 as R standard evaluation would. Instead it interprets `weight` and `length` as 
-columns of tbl and then uses the second and third arguments as predicates used
+columns of `tbl` and then uses the second and third arguments as predicates
 to choose rows from `tbl`.
 
 You can, of course, do the same thing with R standard evaluation, like this:
@@ -68,7 +105,7 @@ and you get the same result.
 But the R syntax for chosing rows  
 has more of what is sometimes called *programming ceremony*
 than the `dplyr::filter` syntax. Programming ceremony is the text you need
-to type into an expression that has little to do with telling R you what it is
+to type into an expression that has little to do with telling R what it is
 want expression to do.
 
 In the R standard evaluation example the
@@ -87,7 +124,7 @@ in table than standard evaluation and that is similar to the syntax used
 to access data in an SQL database that many programmers are
 already familiar with.
 
-This tutorial is about a way to use quosures to make NSE functions like
+This tutorial is about using quosures to make NSE functions like
 `dplyr::filter`. It also covers the issues you can run into when using
 NSE functions. 
 
@@ -108,12 +145,13 @@ f1 <- function(expr) {
 f1(az + bz) 
 ```
 
-The error occurs because `'as.character` function made R do a standard
-evaluation of `expr` and R couldn't find `az`.  
+The error occurs because `'as.character` function use R do a standard
+evaluation of `expr` before it tried to process it. When R did that
+evaluation it couldn't find `az`. This is the way most functions in R work.  
 
-You prevent R from doing a standard evaluation by only using functions that 
-don't make R do a standard evaluation. Later we will see that there are
-quite of few of these but `rlang::enquo` is one of them.
+You prevent R from doing a standard evaluation by using functions that 
+don't use R do a standard evaluation of arguments. Later we will see that there
+are quite of few of these but `rlang::enquo` is one of them.
 
 ```{r raw2}
 f2 <- function(expr) {
@@ -124,23 +162,27 @@ f2 <- function(expr) {
 f2(az + bz) 
 ```
 
-No errors occured when f2 was executed because the `rlang::enquo` doesn't make
+No errors occured when f2 was called because the `rlang::enquo` doesn't use
 R do a standard evaluation of `expr`. It also returns an object called a 
 quosure.
 
 There a number of functions in the `rlang` package that can be used with 
-quosures. `rlang::get_expr` is one and it returns the literal text of the expresson.
+quosures. `rlang::get_expr` is one and it returns the literal text of
+of the expresson expresion that was used to make the quosure.
 
 In theory all you is that literal text of the expression
-to interpret the expression like `rlang::filter does with its arguments. We
-see an example that does this last. Hoever in
+to interpret the expression like `rlang::filter does with its arguments and
+make a custom syntax. We'll
+see an example that does this latter.
+
+However in
 practice the literal text is to hard work with and there
-are better ways access the information in the expression, which we will see as
+are better ways access the information in the expression, which we'll see as
 this tutorial progresses.
 
 
 Another thing a quosure gives you access to is an object model for a quosure. In
-simple terms for R an object model is just a `list` that breaks out
+simple terms a quosure acts mimics a `list` that breaks out
 the details of an expression. Here is an example that breaks out the operator 
 between `az` and `bz` from expr:
 
@@ -154,16 +196,17 @@ f4(az + bz)
 
 ```
 
-The syntax used in the subsetting of `q` might not be familiar but we'll cover
-what it is doing later in this tutorial.
+The use of a numeric vector in the subsetting of `q` might not be familiar.
+Later we'll see that this acts as a path through a list used to represent
+a tree of objects.
 
 The important thing illustrated here is that it is possible to break down an
 expression into the pieces that make it up. In programming this is called
 *parsing* an expression.
 
 Typically when you *program on the language* your are going to have to parse
-expressions. And the really important thing here is that you don't write code
-to parse the raw text of the expression... in fact that would be very
+expressions. And the really important thing here is that **you** don't write the
+code that parses the text of the expression... in fact that would be very
 difficult to do. A quosure will do all that work for you.
 
 Not only can you break an expression into pieces that make it up you can change
