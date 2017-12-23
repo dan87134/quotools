@@ -32,6 +32,10 @@ tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+qtls_what_is_it(qa)
+
+
+
 qb <- qa[[2]]
 
 qc <- `!!`(qb)

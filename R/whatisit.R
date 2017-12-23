@@ -153,8 +153,7 @@ is_functions <- tibble::tribble(
 )
 
 qtls_what_is_it <- function(obj) {
-	is_functions$title %>%
-		tibble::tibble() %>%
+	dplyr::select(is_functions, title) %>%
 		dplyr::filter(purrr::map_lgl(is_functions$test, ~ .(obj))) %>%
 		purrr::flatten_chr()
 }
