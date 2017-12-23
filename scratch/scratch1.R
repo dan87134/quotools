@@ -477,3 +477,4 @@ q <- rlang::quo(a * b + 2 * d )
 ast_tbl <- qtls_make_rlang_table(q)
 g <- qtls_plot_(ast_tbl)
 
+`+`

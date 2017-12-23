@@ -34,7 +34,26 @@ DiagrammeR::render_graph(g, layout="tree")
 
 qtls_what_is_it(qa)
 
+q8 <- quo(a)
+tbl <- qtls_make_rlang_model(q8)
+l <- qtls_make_outline_plot(tbl, id, id, parent,  expr_type, a + b,  expr_text, path)
+writeLines(l)
 
+q8[[2]]
+
+q9 <- rlang::quo(a + b)
+tbl9 <- qtls_make_rlang_model(q9)
+l <- qtls_make_outline_plot(tbl9, id, id, parent, expr_type, expr_text, path)
+writeLines(l)
+
+q10 <- rlang::quo(9)
+tbl10 <- qtls_make_rlang_model(q10)
+l <- qtls_make_outline_plot(tbl10, id, id, parent, expr_type, expr_text, what_is_expr)
+writeLines(l)
+
+
+
+q9[[c(2,1)]]
 
 qb <- qa[[2]]
 
