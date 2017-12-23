@@ -167,8 +167,8 @@ R do a standard evaluation of `expr`. It also returns an object called a
 quosure.
 
 There a number of functions in the `rlang` package that can be used with 
-quosures. `rlang::get_expr` is one and it returns the literal text of
-of the expresson expresion that was used to make the quosure.
+quosures. `rlang::get_expr` is one and it returns the expression object
+that is inside the quosure. 
 
 In theory all you is that literal text of the expression
 to interpret the expression like `rlang::filter does with its arguments and
@@ -197,8 +197,12 @@ f4(az + bz)
 ```
 
 The use of a numeric vector in the subsetting of `q` might not be familiar.
-Later we'll see that this acts as a path through a list used to represent
-a tree of objects.
+Later we'll see that this acts as a *path* to an object in a list used to represent
+a tree of objects. This path is the key to working with quosures.
+
+You can work with quosures without using a path but it is very tedious and error
+prone to do so. This tutorial won't be covering how to use quosures without
+a path.
 
 The important thing illustrated here is that it is possible to break down an
 expression into the pieces that make it up. In programming this is called
@@ -206,43 +210,45 @@ expression into the pieces that make it up. In programming this is called
 
 Typically when you *program on the language* your are going to have to parse
 expressions. And the really important thing here is that **you** don't write the
-code that parses the text of the expression... in fact that would be very
+code that does the parsing... in fact that would be very
 difficult to do. A quosure will do all that work for you.
 
-Not only can you break an expression into pieces that make it up you can change
-it too. Here is an example that does that.
+Not only can you break an expression into the pieces that make it up you can
+change it too. Here is an example that does that.
 
 ```{r obj2}
 f5 <- function(expr) {
 	q <- rlang::enquo(expr)
 	q[[c(2,1)]] <- rlang::sym("-")
-	q
+	rlang::expr_text(q[[2]])
 }
 
 f5(az + bz) 
 
 ```
 
+Here, again, the path `c(2,1)` gets the `+` operator as it did in the previous
+example. But this time we overwrite that operator with the `-` operator. Then
+we use the `rlang::get_expr` function we used two examples ago to she what
+the new expression looks like.
+
 And you can see here that `f5` has changed `az + bz` into `az - bz`.
 
-In fact you could have completely changed the expression if wanted to.
+In fact we could have completely changed the expression if we wanted to.
 
+So far what we've  seen is that *Programming on the Language* means 
+inspecting and maybe changing parts of an expression. Quosuers give you access 
+to those parts. This is certainly a good, high-level picture of what goes
+on in *Programming on the Language*.
 
+This lets you embed your own custom syntax into the arguments of function. An
+you do that because your custom syntax is more straightforward and better
+matches the problem domain you are working in.
 
-have to write code to parse an expression
+But there is more to *Programming on the Language* than this simple
+picture shows.
 
-
-Language operational components isn't a term from Computer Science, it just, I 
-think, describes the parts of a language in terms of how a program, for example written
-in the R language, produces its results.
-
-*Programming on the Language* means inspecting, managing and sometimes 
-manipulating the language operational components of the R. Quosuers
-give you access to these components.
-
-In R, and most programming langauges, you will find three operational components;
-Syntax, model and context. Let's take a look at what each is before we go into 
-details.
+##Working with Quosures
 
 The syntax of a language determines what you are allowed to type when you
 write a program. In R, for example you can type
@@ -261,10 +267,10 @@ and R can understand it and process it. But if you type
 ```
 
 R won't even try to figure out what you are trying to tell it. This happens
-because R checks that what you have typed complies with the syntax of R before
-it tries to do anything else.
+because R checks that the text of your expression complies with the syntax of R
+before it tries to do anything else.
 
-This means that the custom language you are trying to embed inside an R 
+This means that the custom syntax you are trying to embed inside an R 
 expression must comply with the syntax rules for R.
 
 The syntax of a language can be documented in many ways. For R this is done
@@ -277,26 +283,21 @@ directions. In R each one of these directions is called an expression. A big
 factor in how useful a programming language is for a particular task is
 its syntax. 
 
-However the computer cannot directly understand prose of a programming langauge.
-It has to be translated 
-into a model the computer can understand directly. I'm going to give that 
-model the name *Expression Object Model*. Later you will see why I chose
-this name. The *Expression Object Model* is an in memory represenation of an
-expression from the programing language and is built
-out of objects defined by the implementation of the language.
+However the computer program cannot directly understand prose of a programming
+langauge. The prose has to translated into objects that can be passed into
+functions to be process. The is a computer science term for this *object model*.
 
-There can be more than one *Expression Object Model* for a langauge. In R there is one
-defined in the c language implementation of R. But another is defined by the rlang 
-package... that's the one we'll be using in this tutorial.
+A quosure contains the object model for an expression. That's what we saw in
+the previous examples when we accessed the parts of a quosure by using a path.
 
-What can R do with an *Expression Object Model*? The main thing is to evaluate
-it. Evaluation produces a result that can be one or maybe more numbers. Keep
-in mind that a string, under the covers, is just a sequence of numbers. When you
-run an R program you get back the result of R evaluating the *Expession Object Model*
-of each of the expressions in that program.
+But now for more details.
 
-The evaluation of an *Expression Object Model* is where the context is involved.
-Programs are mostly written with symbols that represent values of some kind.
+###Environments
+
+In most cases, quosures are one of the exceptions, when R sees an expression it
+evaluates it and returns one or more numbers that represent the result of
+that evaluation. Keep in mind that a string is just a sequence of numbers and
+so is an image or a plot.
 
 For example in this trivial R program:
 
@@ -307,132 +308,45 @@ a + b
 ```
 
 `a` and `b` are symbols. When R goes to sum up those two symbols it has to somehow
-find out what their values are. It does this by looking up those symbols in
-the context where that evaluation is being done.
+find out what their values are. It does this by looking up the values of
+those symbols in the context where that evaluation is being done.
 
 In R this context is called an environment. In fact in R the context may be
 sequence of multiple environments that R goes through when it needs, or creates,
 the value of a symbol.
 
-The `rlang` package implements an *Expression Object Model* of R. A quosure contains
-that in memory repesentation of the model. In fact the `rlang` psckage is a wrapper around
-the `c` language memory model that R uses to evaluate expressions.
+R can evaluate a quosure just like it can evaluate an expression in a program.
+We'll see how that is done shortly.
 
-A quosue gives you access to all three of these language operational
-components.
+A quosure not only includes the object model of an expression it also includes
+an evironment that is used when that quosure is evaluated. So a quosure carries
+around it's own environment that is used when it is evaluated.
 
-The big picture of what we just covered is that a person uses the syntax of R
-to write an expression which in turn is translated into in memory model of that expression,
-called an *Expression Object Model*. Then R evaluates the *Expression Object Model*
-in a context and produces a result.
-
-# HTML And Analog to Quosures
-
-So far the explanation of quosures and how they can be used to change how R interprets
-its syntax is a bit on the abstract side. A lot of R users are familar with 
-html or at least know that javascript is used to make dynamic web pages.
-
-html is a language, a markup language, and it has language
-operational components just like R does. In fact using javascript to make a 
-dynamic web page is the same as *programming on the language* in R.
-
-However in html it's a lot easier to 
-see the html's equivalent of an *Expression Object Model* in concrete terms.
-So let's do that.
-
-Here is a trival example of an HTML page. It's in `trivial.html` from the 
-files you can download for this tutorial.
-
-```
-<!DOCTYPE html>
-<title>A Tivial Example</title>
-This is an example of a valid web page.
-```
-
-At first glance you might think that this is not a valid web page because it seems
-to be missing many tags you probably think are required. For example the is no
-`<html>` tag
-
-If you open the `trivial.html` file in your web browser it will display properly.
-However opening a file is not a test for html validity... no browsers check html for
-validity and will display almost anything given to them.
-
-However if you go to the W3C web page for checking the validity of html at
-https://validator.w3.org/#validate_by_input and check this example there you will
-find that the syntax, one of the operational components of html, of this page
-is correct.
-
-The syntax for html is defined on the W3C site at
-https://www.w3.org/TR/html51/ . If you 
-dig into it (please don't, it's pretty overwhelming :-)  you will find that many tags
-are optional, for example the `<html>` tag https://www.w3.org/TR/html51/semantics.html#the-html-element
-
-So where might you have gotten the idea that the `html` tag and friends are
-required? It's probably becasue you more familar with the model component
-of html than with it's syntax.
-
-The W3C calls the model component of html the Document Object Model or DOM.
-That's where
-I got the idea of calling the model component of R expresions the
-*Expression Object Model*. The W3C formally documents the DOM at
-https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109/ . 
-
-The DOM defines a number of objects that can be used to represent html in
-memory, just as the `rlang` package does.
-
-Here is an example of the tool that Chrome provides for exploring the DOM, the
-equivalent of the *Expression Object Model* for R.
-
-![Visualization of the DOM](htmlmodel.png)
-
-Notice that the *missing* tags seem to have appeared! Actually what you see are
-not tags, the are markers that represent objects used in the in memory model of
-the html for the page. 
-
-There are some utilitarian differences between the W3C DOM and the `rlang` 
-*Expression Object Model*. The W3C formally defines the model component of html
-and the `rlang`
-package does not. Also out there in 
-the wild that are a lot of tools for visually exploring the DOM. In R we don't
-have comprehensive tools  to visually explore a quosure.
-
-html, not the DOM, is designed to build a static web page. In classic html the
-only way to "liven" up a page by making it change, 
-except for some simpistic changes like a drop down menu,
-is to request the web site that
-originally served up the page to send a new page to the 
-browser.
-
-The way you make a dynamic web page, for example the way Shiny does, is to
-add some javascript to the page. That javascript examines and manipulates the
-DOM, not the html, for the page. When you use javascript like this you are
-*programming on the langauge*, the hypertext markup language.
-
-With a quosure you can "program on the language" with the R langauge. 
-The usage details are different but "programming on the langauge" in R
-is the same thing
-as using javascript with html to make dynamic web pages my maipulating
-the DOM.
-
-##Components in Action
+##Quosures in Action
 
 Before we go further and with only minimal explanation of the code, let's look
-at some examples of quosures that use the language operational components in
-action. These examples are only meant to show what can be accompished with quosures, the programming details of how this is done is covered later in the tutorial.
+at some examples of quosures in
+action. These examples are only meant to show what can be accompished with
+quosures, the programming details of how this is done is covered later
+in the tutorial.
 
 ###Complexity Measure, Using Syntax
 
 Here is a function that measures the complexity of an expression. It's metric is
 pretty simple, the longer the expression the more complex it is. However this 
-function needs to access the expression string itself,
-in order to implement this metric and it uses a quosure to do this.
+function needs to access the expression string itself
+in order to implement this metric and it uses the `rlang::get_expr` function
+we saw earlier to get the expression from the quosure. Then is uses the
+`rlang::expr_text` function to get the text of that expression.
 
 ```{r complexity}
 complexity <- function(expr) {
 	# make a quosure of the expression
 	q <- rlang::enquo(expr)
-	# since a quosure mimics a formula we can get it's text
-	stringr::str_length(rlang::f_text(q))
+	# we need the text of the expression to measure it's length
+	text <- rlang::expr_text(rlang::get_expr(q))
+	# and we return it's length
+	stringr::str_length(text)
 }
 
 complexity(a)
@@ -457,27 +371,38 @@ complexity((+ a b))
 
 As you can see our complexity function never even got to look at the lisp expression
 that was passed into it. That's because the first thing R does when a function
-is called is to check that each argument is allowed by the R language syntax. If one is not R doesn't go any further and just returns an error.
+is called is to check that each argument is allowed by the R language syntax.
+If one is not R doesn't go any further and just returns an error.
 
 ###Bizzaro World Arithmetic, Using Context
 
 In this example and the next we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
 Bizzaro World add means subtract, multiple means divide and *vica versa*.
 
-In this example we use the context of a quosure to implement Bizzarro World
-arithmetic and in the next we will use the `rlang` model of an expression
-to implement it.
+In this example we will make use of the fact that a quosure includes a
+context that is used when the quosure is evaluated. 
+
+You can get the environment of a quosure by using the `rlang::get_env` 
+function. And you change the environment of a quosure
+by using the `rlang::set_env` function.
+
+Changing the environment of a quosure is a little tricky because you can't
+just replace it. You have to, in effect, just add to it. 
+
+You can evaluate a quosure by using the `rlang::tidy_eval` function.
 
 ```{r bizzarro}
 
 barithmetic <- function(expr) {
 	q <- rlang::enquo(expr)
 	# replace the context of the quosure with a new one
+	# make sure the parent of the new environment is the
+	# one you are replacing.
 	context <- new.env(parent = rlang::get_env(q))
 	rlang::set_env(q, context)
 	# redefine the arithmetic functions to do bizzarro arithmetic
-	# in the context of the quosure.
-	# Note that this doesn't change these definitions anywhere else.
+	# in the new environment that was made for the quosure,
+	# so this doesn't change these definitions anywhere else.
 	context$`+` <- function(x,y) {x - y}
 	context$`-` <- function(x,y) {x + y}
 	context$`*` <- function(x,y) {x / y}

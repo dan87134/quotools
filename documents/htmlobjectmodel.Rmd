@@ -1,0 +1,98 @@
+---
+title: "HTML Object Model"
+author: "Dan Sullivan"
+date: "12/23/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# HTML And Analog to Quosures
+
+So far the explanation of quosures and how they can be used to change how R interprets
+its syntax is a bit on the abstract side. A lot of R users are familar with 
+html or at least know that javascript is used to make dynamic web pages.
+
+html is a language, a markup language, and it has language
+operational components just like R does. In fact using javascript to make a 
+dynamic web page is the same as *programming on the language* in R.
+
+However in html it's a lot easier to 
+see the html's equivalent of an *Expression Object Model* in concrete terms.
+So let's do that.
+
+Here is a trival example of an HTML page. It's in `trivial.html` from the 
+files you can download for this tutorial.
+
+```
+<!DOCTYPE html>
+<title>A Tivial Example</title>
+This is an example of a valid web page.
+```
+
+At first glance you might think that this is not a valid web page because it seems
+to be missing many tags you probably think are required. For example the is no
+`<html>` tag
+
+If you open the `trivial.html` file in your web browser it will display properly.
+However opening a file is not a test for html validity... no browsers check html for
+validity and will display almost anything given to them.
+
+However if you go to the W3C web page for checking the validity of html at
+https://validator.w3.org/#validate_by_input and check this example there you will
+find that the syntax, one of the operational components of html, of this page
+is correct.
+
+The syntax for html is defined on the W3C site at
+https://www.w3.org/TR/html51/ . If you 
+dig into it (please don't, it's pretty overwhelming :-)  you will find that many tags
+are optional, for example the `<html>` tag https://www.w3.org/TR/html51/semantics.html#the-html-element
+
+So where might you have gotten the idea that the `html` tag and friends are
+required? It's probably becasue you more familar with the model component
+of html than with it's syntax.
+
+The W3C calls the model component of html the Document Object Model or DOM.
+That's where
+I got the idea of calling the model component of R expresions the
+*Expression Object Model*. The W3C formally documents the DOM at
+https://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109/ . 
+
+The DOM defines a number of objects that can be used to represent html in
+memory, just as the `rlang` package does.
+
+Here is an example of the tool that Chrome provides for exploring the DOM, the
+equivalent of the *Expression Object Model* for R.
+
+![Visualization of the DOM](htmlmodel.png)
+
+Notice that the *missing* tags seem to have appeared! Actually what you see are
+not tags, the are markers that represent objects used in the in memory model of
+the html for the page. 
+
+There are some utilitarian differences between the W3C DOM and the `rlang` 
+*Expression Object Model*. The W3C formally defines the model component of html
+and the `rlang`
+package does not. Also out there in 
+the wild that are a lot of tools for visually exploring the DOM. In R we don't
+have comprehensive tools  to visually explore a quosure.
+
+html, not the DOM, is designed to build a static web page. In classic html the
+only way to "liven" up a page by making it change, 
+except for some simpistic changes like a drop down menu,
+is to request the web site that
+originally served up the page to send a new page to the 
+browser.
+
+The way you make a dynamic web page, for example the way Shiny does, is to
+add some javascript to the page. That javascript examines and manipulates the
+DOM, not the html, for the page. When you use javascript like this you are
+*programming on the langauge*, the hypertext markup language.
+
+With a quosure you can "program on the language" with the R langauge. 
+The usage details are different but "programming on the langauge" in R
+is the same thing
+as using javascript with html to make dynamic web pages my maipulating
+the DOM.

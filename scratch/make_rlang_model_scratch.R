@@ -32,6 +32,10 @@ tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+t <- rlang::expr_text( qa[[2]])
+typeof(t)
+str(t)
+stringr::str_length(rlang::expr_text(qa[[2]]))
 qtls_what_is_it(qa)
 
 q8 <- quo(a)
