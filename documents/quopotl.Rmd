@@ -2,7 +2,9 @@
 title: "Quosures and Programming on the Language"
 author: "Dan Sullivan"
 date: "12/5/2017"
-output: html_document
+output: 
+  html_document:
+    toc: TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -15,8 +17,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 >Special thanks to @lionel at https://community.rstudio.com/ for pointing out
->that subsetting can used quosures instead of car and cdr
+>that subsetting can used with quosures instead of car and cdr
 
+# Quosures
 
 ## Introduction
 
@@ -710,3 +713,4 @@ One difference is that the filter is doing a comparison to the
 And when the operator is replaced it looks up the correspond operator in
 the `bizzarro_op` table instead of just replacing it with `+`.
 
+## Quosure Tool
