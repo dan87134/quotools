@@ -43,7 +43,7 @@ qtls_make_rlang_model <- function(
 	)
 	)
 	parent <- context$pass
-	context$pass <- context$pass + 1
+	context$pass <- context$pass + 1L
 	if (length(e) > 1) {
 		for (index in 1:length(e)) {
 			qtls_make_rlang_model(e[[index]], order = index,
