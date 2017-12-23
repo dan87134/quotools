@@ -19,9 +19,8 @@ knitr::opts_chunk$set(echo = TRUE)
 >Special thanks to @lionel at https://community.rstudio.com/ for pointing out
 >that subsetting can used with quosures instead of car and cdr
 
-# Quosures
 
-## Introduction
+# Introduction
 
 Quosures enable *Programming on the Language*. This tutorial looks what that
 means and how to do it.
@@ -136,7 +135,7 @@ This tutorial is about using quosures to make NSE functions like
 `dplyr::filter`. It also covers the issues you can run into when using
 NSE functions. 
 
-##Object Models
+#Object Models
 
 In order to *program on the language* you need few things. 
 
@@ -303,7 +302,7 @@ the previous examples when we accessed the parts of a quosure by using a path.
 
 But now for more details.
 
-###Environments
+##Environments
 
 In most cases, quosures are one of the exceptions, when R sees an expression it
 evaluates it and returns one or more numbers that represent the result of
@@ -333,7 +332,7 @@ A quosure not only includes the object model of an expression it also includes
 an evironment that is used when that quosure is evaluated. So a quosure carries
 around it's own environment that is used when it is evaluated.
 
-##Quosures in Action
+#Quosures in Action
 
 Before we go further and with only minimal of some of the functions
 in the code, let's look
@@ -342,7 +341,7 @@ action. These examples are only meant to show what can be accompished with
 quosures, the programming details of how this is done is covered later
 in the tutorial.
 
-###Complexity Measure, Using Syntax
+##Complexity Measure, Using Syntax
 
 Here is a function that measures the complexity of an expression. It's metric is
 pretty simple, the longer the expression the more complex it is. However this 
@@ -386,7 +385,7 @@ that was passed into it. That's because in this case R does when a function
 is called is to check that each argument is allowed by the R language syntax.
 If one is not R doesn't go any further and just returns an error.
 
-###Bizzaro World Arithmetic, Using Context
+##Bizzaro World Arithmetic, Using Context
 
 In this example and the next we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
 Bizzaro World add means subtract, multiple means divide and *vica versa*.
@@ -439,7 +438,7 @@ substitute bizzarro arithmetic for regular arithmetic.
 Next we're going to change ggplot2 to use non-Euclidian geometry
 for it's plots... ha, ha, just kidding :-).
 
-### Inspecting the Object Model
+## Inspecting the Object Model
 
 In an earlier example we saw that it was pretty easy to change the `+` to a 
 `-` in a the simple expression `az + bz`. What that example glossed over was
@@ -713,4 +712,4 @@ One difference is that the filter is doing a comparison to the
 And when the operator is replaced it looks up the correspond operator in
 the `bizzarro_op` table instead of just replacing it with `+`.
 
-## Quosure Tool
+# Quosure Tool
