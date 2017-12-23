@@ -10,8 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
->Expressions have lesser ones upon their backs to bite 'em. 
+>Expressions have lesser ones upon their backs to bite 'em. <br>
 >Lesser expressions have still lesser ones and so on *ad finitum*.
+
+
+>Special thanks to @lionel at https://community.rstudio.com/ for pointing out
+>that subsetting can used quosures instead of car and cdr
+
 
 ## Introduction
 
@@ -19,8 +24,8 @@ Quosures enable *Programming on the Language*. This tutorial looks what that
 means and how to do it.
 
 *Programming on the Language* is a way of circumventing how R evaluates an
-expression in function argument so that you can evaluate it any way you
-want. This called non-standard evaluation, or NSE, of an argument because
+expression in a function argument so that you can evaluate it any way you
+want. This is called non-standard evaluation, or NSE, of an argument because
 you will not be evaluating it the way standard way that R does. A function that
 handles some of its arguments this way is a called an NSE function.
 
@@ -52,30 +57,30 @@ Of course, in practice, you would do this sum as:
 
 Now R doesn't use NSE to do this because the implementors of R we able to add
 arithmetic as a native syntax to R. The important take away from this example
-is that adding arithmetic syntax to R didn't add anything to the computational
-capabilites of R, it just made it easier to use in the problem domain of
+is that adding arithmetic syntax to R didn't add anything to it's computational
+capabilities, it just made it easier to use in the problem domain of
 doing arithmetic calculations.
 
-Using quosures to *Programming on the Language* lets you add
+Using quosures to *Program on the Language* lets you add
 custom syntaxes for arguments of functions without changing the implementation
 of R. This way you can make R easier to use in the problem domains you
 deal with.
 
 Now let's start looking at how all this works.
 
-For example when R sees function call like...
+For example, assuming `f` is not an NSE function, when R sees
+function call like...
 
 `f(tbl, weight < 94)`
 
-... it will evaluate the expression in the second argument and pass TRUE to `f`
-if the value of the variable `weight` is less than 94 but otherwise pass FALSE
-to 'f'. This is called standard evaluation
+... it will at some point end up evaluating the expression in the second
+argument and pass TRUE to `f` if the value of the variable `weight` is less
+than 94 but otherwise pass FALSE to 'f'. This is called standard evaluation
 because that is the standard way R handles arguments in a function call.
 
 The `dplyr::filter` function evaluates the same syntax in a completly
 different way by using quosures and non-standard valuation.
 
- `filter(tbl, weight < 94, length > 12)`
 ```{r simplefilter}
 suppressPackageStartupMessages(library(dplyr))
 tbl <- tibble::tribble(
@@ -105,13 +110,13 @@ and you get the same result.
 But the R syntax for chosing rows  
 has more of what is sometimes called *programming ceremony*
 than the `dplyr::filter` syntax. Programming ceremony is the text you need
-to type into an expression that has little to do with telling R what it is
+to add to an expression that has little to do with telling R what it is
 want expression to do.
 
 In the R standard evaluation example the
 programing ceremony is `tbl` repeated three times, the quotes and square
 brackets and even that one *dangling* comma. All of those things are necessary
-to get the R to choose the rows you want but does nothing to clarify what
+to get the R to choose the rows you want but do nothing to clarify what
 you want the R to do.
 
 `dplyr::filter` has a syntax with much less ceremony and that is arguably more
@@ -120,7 +125,7 @@ databases use to choose rows.
 
 `dplyr::filter` highlights a key reason making NSE functions... they let you
 create a syntax for arguments that is better adapted to accessing data
-in table than standard evaluation and that is similar to the syntax used
+in a table than standard evaluation and that is similar to the syntax used
 to access data in an SQL database that many programmers are
 already familiar with.
 
@@ -145,8 +150,8 @@ f1 <- function(expr) {
 f1(az + bz) 
 ```
 
-The error occurs because `'as.character` function use R do a standard
-evaluation of `expr` before it tried to process it. When R did that
+The error occurs because `'as.character` function uses R do a standard
+evaluation of `expr` before it tries to process it. When R did that
 evaluation it couldn't find `az`. This is the way most functions in R work.  
 
 You prevent R from doing a standard evaluation by using functions that 
@@ -170,8 +175,8 @@ There a number of functions in the `rlang` package that can be used with
 quosures. `rlang::get_expr` is one and it returns the expression object
 that is inside the quosure. 
 
-In theory all you is that literal text of the expression
-to interpret the expression like `rlang::filter does with its arguments and
+In theory all you need is that literal text of the expression
+to interpret the it like `rlang::filter does with its arguments and
 make a custom syntax. We'll
 see an example that does this latter.
 
@@ -182,7 +187,7 @@ this tutorial progresses.
 
 
 Another thing a quosure gives you access to is an object model for a quosure. In
-simple terms a quosure acts mimics a `list` that breaks out
+simple terms a quosure mimics a `list` that holds out
 the details of an expression. Here is an example that breaks out the operator 
 between `az` and `bz` from expr:
 
@@ -195,6 +200,8 @@ f4 <- function(expr) {
 f4(az + bz) 
 
 ```
+
+The `f1` function returned the `+` operator from the expression passed into it.
 
 The use of a numeric vector in the subsetting of `q` might not be familiar.
 Later we'll see that this acts as a *path* to an object in a list used to represent
@@ -209,8 +216,8 @@ expression into the pieces that make it up. In programming this is called
 *parsing* an expression.
 
 Typically when you *program on the language* your are going to have to parse
-expressions. And the really important thing here is that **you** don't write the
-code that does the parsing... in fact that would be very
+expressions. And the really important thing here is that **you** don't have
+to write the code that does the parsing... in fact that would be very
 difficult to do. A quosure will do all that work for you.
 
 Not only can you break an expression into the pieces that make it up you can
@@ -227,9 +234,9 @@ f5(az + bz)
 
 ```
 
-Here, again, the path `c(2,1)` gets the `+` operator as it did in the previous
+Here. again, the path `c(2,1)` gets the `+` operator as it did in the previous
 example. But this time we overwrite that operator with the `-` operator. Then
-we use the `rlang::get_expr` function we used two examples ago to she what
+we use the `rlang::get_expr` function we used two examples ago to show what
 the new expression looks like.
 
 And you can see here that `f5` has changed `az + bz` into `az - bz`.
@@ -241,7 +248,7 @@ inspecting and maybe changing parts of an expression. Quosuers give you access
 to those parts. This is certainly a good, high-level picture of what goes
 on in *Programming on the Language*.
 
-This lets you embed your own custom syntax into the arguments of function. An
+This lets you embed your own custom syntax into the arguments of function. And
 you do that because your custom syntax is more straightforward and better
 matches the problem domain you are working in.
 
@@ -285,7 +292,8 @@ its syntax.
 
 However the computer program cannot directly understand prose of a programming
 langauge. The prose has to translated into objects that can be passed into
-functions to be process. The is a computer science term for this *object model*.
+functions to be processed. The is a computer science term for this 
+*object model*.
 
 A quosure contains the object model for an expression. That's what we saw in
 the previous examples when we accessed the parts of a quosure by using a path.
@@ -324,7 +332,8 @@ around it's own environment that is used when it is evaluated.
 
 ##Quosures in Action
 
-Before we go further and with only minimal explanation of the code, let's look
+Before we go further and with only minimal of some of the functions
+in the code, let's look
 at some examples of quosures in
 action. These examples are only meant to show what can be accompished with
 quosures, the programming details of how this is done is covered later
@@ -370,7 +379,7 @@ complexity((+ a b))
 ```
 
 As you can see our complexity function never even got to look at the lisp expression
-that was passed into it. That's because the first thing R does when a function
+that was passed into it. That's because in this case R does when a function
 is called is to check that each argument is allowed by the R language syntax.
 If one is not R doesn't go any further and just returns an error.
 
@@ -379,30 +388,31 @@ If one is not R doesn't go any further and just returns an error.
 In this example and the next we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
 Bizzaro World add means subtract, multiple means divide and *vica versa*.
 
-In this example we will make use of the fact that a quosure includes a
-context that is used when the quosure is evaluated. 
+In this example we will make use of the fact that a quosure includes an
+environment that is used when it is evaluated. 
 
 You can get the environment of a quosure by using the `rlang::get_env` 
 function. And you change the environment of a quosure
 by using the `rlang::set_env` function.
 
 Changing the environment of a quosure is a little tricky because you can't
-just replace it. You have to, in effect, just add to it. 
+just replace it in most cases. You have to, in effect, just add to it. 
 
 You can evaluate a quosure by using the `rlang::tidy_eval` function.
 
 ```{r bizzarro}
 
 barithmetic <- function(expr) {
+	# make a quosure
 	q <- rlang::enquo(expr)
-	# replace the context of the quosure with a new one
-	# make sure the parent of the new environment is the
+	# Replace the environment of the quosure with a new one.
+	# Make sure the parent of the new environment is the
 	# one you are replacing.
 	context <- new.env(parent = rlang::get_env(q))
 	rlang::set_env(q, context)
 	# redefine the arithmetic functions to do bizzarro arithmetic
 	# in the new environment that was made for the quosure,
-	# so this doesn't change these definitions anywhere else.
+	# so it doesn't change these definitions anywhere else.
 	context$`+` <- function(x,y) {x - y}
 	context$`-` <- function(x,y) {x + y}
 	context$`*` <- function(x,y) {x / y}
@@ -420,28 +430,233 @@ calc2
 ```
 
 Here we were able to reinterpret the expression passed into `barithmetic` by
-manipulating the context component to 
+manipulating the context to 
 substitute bizzarro arithmetic for regular arithmetic. 
 
 Next we're going to change ggplot2 to use non-Euclidian geometry
 for it's plots... ha, ha, just kidding :-).
 
-### Bizzarro World Arithmetic again, Using Model
+### Inspecting the Object Model
 
-Now we are going to use the object model of R expressions that the 
-`rlang` package uses,
-to implement bizzarro arithmetic. This example uses some code
-from the files that can be downloaded for this tutorial. The details of how this
-this code works won't be fully explained until later in this tutorial.
+In an earlier example we saw that it was pretty easy to change the `+` to a 
+`-` in a the simple expression `az + bz`. What that example glossed over was
+how to figure out where the `+` was.
 
-This example uses `qtls_make_rlang_model` to extract the object model of an
-expression from a quosure. Shortly we'll see that that model is a table.
+In fact that highlights one of the issues with quosures, it's hard to *see*
+the object model they contain. In theory you can do this by traversing the
+object by using subsetting. Here is an example:
 
-It  then analyzes the model to find all the arithmetic operations
-in it and then changes each of them to its Bizzarro World counterpart. For
-example `+` is changed to `- in the model.
+```{r traverse1}
+q <- rlang::quo(a + b + c)
+length(q)
+obj1 <- q[[1]]
+obj1
+obj2 <- q[[2]]
+obj2
+length(obj2)
+obj2_1 <- obj2[[1]]
+obj2_2 <- obj2[[2]]
+obj2_3 <- obj2[[3]]
+rlang::get_expr(obj2_1)
+rlang::get_expr(obj2_2)
+rlang::get_expr(obj2_3)
 
-After that it just let's R evaluate the modified model.
+```
+
+Here you can see that `q` acts like list. And the objects it contains may act
+as lists too. This kind of data structure is called a tree... each object in
+the structure contains a list of its children, if it has any.
+
+After some digging you can see we found one of the `+`'s in `a + b + c`. And
+you could fix up this script to be more automated.
+
+There are a couple of issues with working this way. One is that typically in R
+we don't work with trees and R itself doesn't have a good set of functions 
+or tools for working with trees.
+
+The object model of a quosure would be easier to work with if it was a table. 
+We have lots of tools and functions for working with tables in R.
+
+But can a table represent a tree? It sure can, in fact it's pretty common to
+represent trees in relation database table. Here is an example of a pretty
+simple tree in an R table.
+
+```{r tree1}
+tree_table <- tibble::tribble(
+	~id, ~parent, ~label,
+	1L, 0L, "X1234",
+	2L, 1L, "Y557",
+	3L, 1L, "t88",
+	4L, 2L, "j111"
+)
+tree_table
+```
+
+The thing that makes this a tree are the `id` and `parent` columns. By using
+this convention we can make our own tools for working with tree tables. The
+functions we about to use are in the downloads for this tutorial and later
+we will go into how they work.
+
+Let's get a picture of `tree_table`. The function `qtls_plot_model` builds an
+object that the `DiagrammeR` package can render.
+
+```{r nodes}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(quotools))
+suppressPackageStartupMessages(library(DiagrammeR))
+# this builds a data structure that DiagrammeR can use
+g <- qtls_plot_model(tree_table)
+# show the diagram of the tree in tree_table
+DiagrammeR::render_graph(g, layout="tree")
+```
+
+This shows us that we can, in fact, represent a tree structure in a table. Now
+what we need to do is convert an expression to a table. That's what the
+`qtls_make_rlang_model` does, like this:
+
+```{r objecttable}
+q <- rlang::quo(a + b + c)
+# this make a tree table out of a quosure
+tree_table <- qtls_make_rlang_model(q)
+tree_table
+```
+
+You can see this table has the necessary `id` and `parent` columns needed to
+represent a tree. But is also has a lot of information about each object in the
+tree. This is about all the info you will need to work with quosures and you
+could make a trimmed down version of `qtls_make_rlang_model` that eleminated
+things you didn't need in a particular application.
+
+In theory the objects in the tree could be of any type, but in most cases there
+are only a few types; language, symbol, numeric, double, and integer.
+
+Notice that the expr_type column tells us the type of an object. Operators, like
+`+`, will always be in a object of type `symbol`. Also one column that didn't
+show on the main part of the table is the `expr_text` column. For a `+` operator
+that column will contain "+".
+
+And notice that there is also a path column. We talked briefly about paths
+earlier and saw that they gave us a way to access a particular object in an
+object model.
+
+Now we can apply our knowledge of table to change all the `+` operators in
+an expression to `-` operators.
+
+```{r op1}
+flip_add <- function(expr) {
+	# make a quosure of expr
+	q <- rlang::enquo(expr)
+	# make a tree table of the object model of q
+	tree_table <- qtls_make_rlang_model(q)
+	# this finds all the + operators in the expression
+	plus_ops <- dplyr::filter(tree_table, expr_type == "symbol", expr_text == "+")
+	# for this to work q has to be passed by reference
+	qenv <- new.env()
+	qenv$q <- q
+	# this changes all of them to -
+	purrr::walk(plus_ops$path, function(path) {
+		qenv$q[[path]] <- rlang::sym("-")})
+	# and this evaluates the modified expression
+	rlang::eval_tidy(qenv$q)
+}
+
+a <- 1
+b <- 2
+c <- 3
+
+flip_add(a + b + c)
+flip_add(a + b * c)
+
+```
+
+It looks like our `flip_add` function is working... only the `+` operators
+were change to `-`.
+
+An the thing about this solution is that is depends mostly on your knowledge
+of R and tables to find all of the objects that are `+` operators,
+not how to use primative functions to traverse linked lists.
+
+It also works for any expression, not matter how complicated it is.
+
+We could implement `flip_add` using just the subsetting operations on
+q. That's, as we will see later, how the `qstl_make_rlang_model` function was
+implemented. But you would find that pretty tedious to do, the code itself
+would be harder to reason about, and it wouldn't be very reusable.
+
+Reusable?
+
+Since we can make a tree table it's easy to now make a diagram of the overall tree
+structure of any expression. For example:
+
+```{r tree2}
+q <- rlang::quo(a + b + c)
+tree_table <- qtls_make_rlang_model(q)
+g <- qtls_plot_model(tree_table)
+DiagrammeR::render_graph(g, layout = "tree")
+
+```
+
+Here we see the general stucture of the object model for `a + b + c` and how
+a quosure breaks it down. This not only helps you understand quosures better it 
+can be used to a tool to debug things. You will find that a lot of times when
+you are working with quosures errors occur simply because the object model you
+imagine for an expression isn't what it really is.
+
+But there is still something missing here... what about all that extra 
+information in the tree table? Being able to see the overall structure of 
+the object model is useful but sometimes you are really going to some of
+that extra info.
+
+You could use the object explorer that is built into R Studio. But that just
+gives you a flat table view... it doesn't show the structure.
+
+What you need is an outline view of the object model. That's what the
+`qtls_make_outline_plot` function does.
+
+```{r outline}
+q <- rlang::quo(a + b + c)
+tree_table <- qtls_make_rlang_model(q)
+# make the outline plot
+outline <- qtls_make_outline_plot(tree_table, id, id, expr_text, expr_class, expr_type, path)
+writeLines(outline)
+
+```
+
+There really is too much information in a row of the `tree_table` to fit on a
+single row so `qtls_make_outline_plot` lets you select the columns you want to
+include in the outline. Also `qtls_make_outline` is an NSE function so it will
+be a good, sort of real world, example to look at later.
+
+Let's review what we've just looked at here.
+
+A quosure contains an object model and an environment for evaluating that
+model. The object model is a tree structure. You can traverse that model
+by using subsetting but that can be tedious
+and leads to code that will really be hard to debug or reason about.
+
+An object in the object model of a quosure can be access by using subsetting 
+with numeric vector.
+
+A table can represent a tree by having id and parent columns to hold the tree.
+The rest of the columns can hold information about the objects in the tree, for
+example that path to an object.
+
+By applying your knowledge of processing tables in R you can access and modify
+the object model inside a quosure. 
+
+A while ago we showed how to implement Bizzarro World arithmetic by using
+the context of a quosure. Now let's revisit that example and implement it using
+the object model of a quosure.
+
+### Bizzarro World Arithmetic again, Using Object Model
+
+This example uses two tables. One is the bizzarro_op table. It keeps track of the
+real world arithmetic operations and their corresponding Bizzarro World 
+operations.
+
+It also uses `model` to hold the tree table of an quosure.
+
+Follow the comments to see how it works.
 
 
 ```{r}
@@ -460,14 +675,14 @@ bizzarro_op <-
 bizzarro_flip <- function(q) {
 	# get the rlang model of the quosure q
 	model <- qtls_make_rlang_model(q)
-	# we'll need to pass quosure by reference
+	# we'll need to pass q, the quosure, by reference
 	qenv <- new.env()
 	qenv$q <- q
 	# look up operators in the model that need to be flipped
-	symbols <- dplyr::filter(
+	arith_ops <- dplyr::filter(
 		model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
 	# walk the paths to each operator
-	purrr::walk(symbols$path,
+	purrr::walk(arith_ops$path,
 		function(path) {
 			# find Bizzarro World counterpart for the operator
 			bop <- dplyr::filter(bizzarro_op, sym == qenv$q[[path]])$bizzarro_sym
@@ -488,80 +703,10 @@ barithmetic(3 * 4 + 1)
 #yikes, that's bizzare!!!!
 ```
 
-Same bizzarro results, but this time we bizzarro'd all the arithmetic operators
-in the rlang object model and then gave it back to R to do the evaluation.
-rlang::eval_tidy is doing the evaluation of the quosure with the modified model.
+This code works almost the same way as `flip_add` did in the previous sample. 
+One difference is that the filter is doing a comparison to the
+`bizzarro_sym` column of the `bizzarro_op` table instead of a static symbol.
 
+And when the operator is replaced it looks up the correspond operator in
+the `bizzarro_op` table instead of just replacing it with `+`.
 
-##Introduction to the `rlang` Object Model
-
-
-
-Here is the
-object model we used for the `3 * 4 + 1` expression we used
-in the last bizzarro arithmetic example.
-
-```{r showtable}
-suppressPackageStartupMessages(library(quotools))
-show_model_table <- function(expr) {
-	q <- rlang::enquo(expr)
-	print(qtls_make_rlang_model(q))
-}
-show_model_table(3 * 4 + 1)
-```
-
-We'll be covering more details of what is in this table and the model later
-but here are a few salient points.
-
-Notice that this  table is representing a tree. The `id` and `parent` 
-columns define the structure of the tree. The row with a 0 parent is 
-the root of the tree.
-
-We didn't need to turn the model into a table to implement Bizzarro World
-arithmetic. The `rlang` package has
-functions, which we'll look at later, that will walk through the entire model
-but code that  uses them is tedious to write and understand.
-
-With the model as a table you can apply your existing skills for working with
-tabular data to do *programming on the languge* rather then working with
-low-level functions.
-
-Here is a visualization of the basic tree structure
-for the expression `a * b + c * d` based on the id and parent columns.
-
-```{r simpleexp}
-suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(quotools))
-suppressPackageStartupMessages(library(DiagrammeR))
-q <- rlang::quo(a * b + c * d )
-model <- qtls_make_rlang_model(q)
-g <- qtls_plot_model(model)
-DiagrammeR::render_graph(g, layout = "tree")
-```
-
-The `qtls_plot_model` builds a `DiagarmmeR` plot of the model.
-
-As an aside notice that
-we were able to re-use the tablular form of the `rlang` model to produce a
-plot rather than using all the low-level functions in the `rlang` package to
-do this. Later we see other re-uses of the the tabular model component.
-
-Each circle in this illustration is a object in our tree and displays the text
-from the expr_text column in the model table. 
-
-Of course the table we just looked at has a lot more infomation in it
-than this tree does. The key thing that this diagram illustrates is that
-the `rlang` model of a quosure is a tree of node objects that the `rlang`
-package uses to model an expression.
-
-At the root of the tree you can see the expression we started with,
-`a * b + c * d`. As you move down the tree you can see that it breaks
-down the initial expression into smaller an smaller parts.
-
-
-
-
-## Model Details
-
-The introduction to the model in the previous section lossly defined a model as
-a tree of objects.  

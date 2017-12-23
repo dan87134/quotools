@@ -25,6 +25,34 @@ tbl <- qtls_make_rlang_table(qa)
 
 s <- "\"b\""
 
+q <- rlang::quo(a + b + c)
+tbl <- qtls_make_rlang_model(q)
+
+flip_add <- function(expr) {
+	q <- rlang::enquo(expr)
+	tree_table <- qtls_make_rlang_model(q)
+	# this finds all the + operators in the expression
+	plus_ops <- dplyr::filter(tree_table, expr_type == "symbol", expr_text == "+")
+	# for this to work q has to be passed by reference
+	qenv <- new.env()
+	qenv$q <- q
+	# this changes all of them
+	purrr::walk(plus_ops$path, function(path) {
+		qenv$q[[path]] <- rlang::sym("-")})
+	eval_tidy(qenv$q)
+}
+
+flip_add(1 + 2 + 3)
+flip_add(1 + 2 * 3)
+
+
+q <- rlang::quo(a + b + c)
+tree_table <- qtls_make_rlang_model(q)
+g <- qtls_plot_model(tree_table)
+DiagrammeR::render_graph(g, layout = "tree")
+
+
+
 
 
 qa <- rlang::quo(a * "b" + 7 * d)
@@ -35,7 +63,7 @@ DiagrammeR::render_graph(g, layout="tree")
 t <- rlang::expr_text( qa[[2]])
 typeof(t)
 str(t)
-stringr::str_length(rlang::expr_text(qa[[2]]))
+stringr::str_length(rlang::expr_text(rlang::get_expr(qa)))
 qtls_what_is_it(qa)
 
 q8 <- quo(a)
