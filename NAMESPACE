@@ -3,6 +3,7 @@
 export(qtls_apply_carcdr)
 export(qtls_graph_car_cdr_for_expression)
 export(qtls_make_info_function)
+export(qtls_make_outline_plot)
 export(qtls_make_rlang_model)
 export(qtls_node_tree)
 export(qtls_plot_model)

@@ -56,11 +56,36 @@ typeof(e)
 class(e)
 qtls_what_is_it(e)
 
-qa <- rlang::quo(a * "b" + 7 * d)
+qa <- rlang::quo(a + b + c)
 tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+qtls_what_is_it(qa)
+
+l <- c("asdfasdf", "ooo")
+"asfasdf"  == class(l)
+typeof(l)
+
+s1 <- rlang::sym("asdf")
+tbl <- qtls_make_rlang_model(":afsd")
+
+qtls_what_is_it( 9)
+e <- rlang::parse_expr("9")
+qtls_what_is_it(e)
+
+class(e)
+typeof(e)
+
+tbl <- qtls_make_rlang_model(1)
+l <- qtls_make_outline_plot(tbl, id, id, parent,  expr_type, expr_text, path)
+writeLines(l)
+A <-9
+tbl <- qtls_make_rlang_model(rlang::parse_expr("A + b"))
+l <- qtls_make_outline_plot(tbl, id, id, parent,  expr_type, expr_text, path)
+writeLines(l)
+
+qtls_what_is_it(A)
 
 
 t <- rlang::expr_text( qa[[2]])

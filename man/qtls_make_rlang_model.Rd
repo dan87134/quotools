@@ -2,27 +2,30 @@
 % Please edit documentation in R/make_rlang_model.R
 \name{qtls_make_rlang_model}
 \alias{qtls_make_rlang_model}
-\title{Wrap the rlang object model for a language object in a table}
+\title{Wrap the rlang object model for an object into a table.
+This is a recursive function}
 \usage{
 qtls_make_rlang_model(e, parent = 0L, context = new.env(), order = 1L,
   path = vector(mode = "integer"))
 }
 \arguments{
-\item{e}{a language object like an expr or quosure}
+\item{e}{a language object like an expr or atomic or
+quosure (which mimics an expression)}
 
 \item{parent}{parent of expression (used by recursion only)}
 
 \item{context}{environment used to pass table being constructed
-by reference}
+by reference (used by recursion only)}
 
-\item{order}{position relative to siblings}
+\item{order}{position relative to siblings (used by recursion only)}
 
-\item{path}{path in e to object}
+\item{path}{path in e in object (used by recursion only)}
 }
 \value{
 A table where each row has, among other things a path
-  to the object for that row
+  to the object for that object
 }
 \description{
-Wrap the rlang object model for a language object in a table
+Wrap the rlang object model for an object into a table.
+This is a recursive function
 }
