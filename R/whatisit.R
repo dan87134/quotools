@@ -152,6 +152,15 @@ is_functions <- tibble::tribble(
 	"vector"
 )
 
+#' What does object mimic
+#'
+#' @param obj check obj to see what it mimics
+#'
+#' @return
+#' @export
+#'
+#'@importFrom magrittr %>%
+#' @examples
 qtls_what_is_it <- function(obj) {
 	dplyr::select(is_functions, title) %>%
 		dplyr::filter(purrr::map_lgl(is_functions$test, ~ .(obj))) %>%

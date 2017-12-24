@@ -15,19 +15,6 @@ label_fix <- function(label) {
 }
 
 
-#' Title
-#' build a table of parent child relationship based
-#' on car/cdr's from a quosure
-#' @param q
-#' @param level
-#' @param tbl
-#' @param parent
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#' @export
 qtls_make_ast_table <-
 	function(q_or_expr,
 					 tbl = new.env() ,

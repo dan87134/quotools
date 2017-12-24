@@ -51,14 +51,17 @@ tree_table <- qtls_make_rlang_model(q)
 g <- qtls_plot_model(tree_table)
 DiagrammeR::render_graph(g, layout = "tree")
 
-
-
-
+e <- rlang::parse_expr("1 + a")
+typeof(e)
+class(e)
+qtls_what_is_it(e)
 
 qa <- rlang::quo(a * "b" + 7 * d)
 tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
+
+
 
 t <- rlang::expr_text( qa[[2]])
 typeof(t)
