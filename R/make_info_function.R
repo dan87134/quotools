@@ -17,7 +17,7 @@ qtls_make_info_function <- function(tbl, key_column, ...) {
 	qkey <- rlang::enquo(key_column)
 	qkey_expr <- rlang::get_expr(qkey)
 	qkey_text <- rlang::expr_text(qkey_expr)
-	q <- quos(...)
+	q <- rlang::quos(...)
 	# make sure that all columns are symbols
 	for (index in 1:length(q)) {
 		qcol <- q[[index]]

@@ -1,4 +1,14 @@
 # outline plot
+#' Makes character based outline plot of tbl
+#'
+#' @param tbl a table with an id and parent column
+#' @param key_column  key column for table (typically id)
+#' @param ... columns to be included in output
+#'
+#' @return
+#' @export
+#'
+#' @examples
 qtls_make_outline_plot <- function(tbl, key_column, ...) {
 	qkey <- rlang::enquo(key_column)
 	qcolumns <- rlang::quos(...)
