@@ -712,4 +712,72 @@ One difference is that the filter is doing a comparison to the
 And when the operator is replaced it looks up the correspond operator in
 the `bizzarro_op` table instead of just replacing it with `+`.
 
-# Quosure Tool
+# Quosure Tools
+
+The code for the qstl_ functions used in this tutorial is available at https://github.com/dan87134/quotools.git. 
+
+Note that this code is just for tutorial purposes and should not be used in
+production. It is not tested or supported in any way.
+
+Before we start looking at the functions in `quotools` we need to talk a
+little bit about what kinds of objects are using in the object model that
+the package `rlang` exposes. 
+
+## Objects and Mimics
+
+There is a concept in computer science call object *substitition*. 
+
+It basically says it is possible for an object to mimic other kinds of objects. 
+What that means is that if you have an object, say `objA` and it's a `package`
+and a function, call it `processBox(box)` that is documented to only accept
+`box`'s, you may still be able to pass `objA` into it. That will happen
+if `objA` mimic's a `box`. 
+
+In some langauges this capability is formally and rigorously supported using 
+langauge features called classes and interfaces. In fact it can be so
+rigorous that you can't even compile a call to a function like `processBox`
+unless the compiler can tell that for sure the object being passed to
+`processBox` can mimic a `box`. That's before the code has even been run.
+
+This is not how R works though, even though R does optionally support classes.
+It's up to the function itself, or at least R runtime, to decide if an object
+passed to it is acceptable. So you don't know if an object is acceptable to a 
+function until you run the code in  R.
+
+Ok, that was bunch of rather abstract information about a concept in
+computer science called *substitution*.
+
+The objects that the `rlang` package uses to make object models do support
+substition but in a *ad hoc* manner. For example it's possible to write a
+function that will only accept a `quosure` as an argument. Here is a trivial
+example.
+
+```{r accept}
+only_quosures <- function(q){
+	if (rlang::is_quosure(q)){
+		print("OK")
+	} else {
+		print("Nope")
+	}
+}
+# make a quosure
+q <- rlang::quo(a + b + c)
+# get an object from the object model
+obj <- q[[c(2,2)]]
+# only_quosures is happy with q
+only_quosures(q)
+# but unhapply with obj
+only_quosures(obj)
+# even though both are the same type
+typeof(q)
+typeof(obj)
+```
+
+
+This example shows how the functions in the `rlang` package determine if an
+argument is acceptable or not. In fact there are about 48 different `is_`
+functions in the `rlang` package. 
+
+
+
+
