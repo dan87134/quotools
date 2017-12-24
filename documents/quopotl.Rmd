@@ -744,8 +744,8 @@ It's up to the function itself, or at least R runtime, to decide if an object
 passed to it is acceptable. So you don't know if an object is acceptable to a 
 function until you run the code in  R.
 
-Ok, that was bunch of rather abstract information about a concept in
-computer science called *substitution*.
+Ok, that was bunch of rather abstract information about a concept of
+substitution.
 
 The objects that the `rlang` package uses to make object models do support
 substition but in a *ad hoc* manner. For example it's possible to write a
@@ -773,11 +773,295 @@ typeof(q)
 typeof(obj)
 ```
 
+Here `only_quosures` will accept `q` as an argument but not `obj`, even though
+they are both the same type.
+
+## qtls_what_is_it
 
 This example shows how the functions in the `rlang` package determine if an
-argument is acceptable or not. In fact there are about 48 different `is_`
-functions in the `rlang` package. 
+argument is acceptable or not. The do this by using one or more of
+about 70 different `is_` functions in the `rlang` package.
+
+You can't directly tell which kinds of object an object can mimic. You have to
+go through and use each of the 70 `is_` functions to find out. But the function
+qtls_what_is_it will do this for you an return a character vector of all the
+kinds of objects an object can mimic. Let's try it on the two object we just
+looked at... and remember that they are both of type `language`.
+
+```{r is1}
+qtls_what_is_it(q)
+qtls_what_is_it(obj)
+```
+
+When you are working with quosures or the `rlang` object model you often need to
+know not just the type and class of an object but what kinds of object it can
+mimic. That's what the qtls_what_is_it function is used for.
+
+It's actually a fairly simple function but lets look at the code for it.
+
+The first part is just a table:
+### Test Table
+```{r table1, eval=FALSE}
+is_functions <- tibble::tribble(  
+	~ test, ~ title,  
+	rlang::is_atomic, "atomic",  
+	rlang::is_bare_atomic, "bare_atomic",  
+	rlang::is_bare_bytes, "bare_bytes",  
+	rlang::is_bare_character, "bare_character",  
+	rlang::is_bare_double, "bare_double",  
+	rlang::is_bare_env, "bare_env",  
+	rlang::is_bare_formula, "bare_formula",  
+	rlang::is_bare_integer, "bare_integer",  
+	rlang::is_bare_integerish, "bare_integerish",  
+	rlang::is_bare_list, "bare_list",  
+	rlang::is_bare_logical, "bare_logical",  
+	rlang::is_bare_numeric, "bare_numeric",  
+	rlang::is_bare_raw, "bare_raw",  
+	rlang::is_bare_string, "bare_string",  
+	rlang::is_bare_vector, "bare_vector",  
+	rlang::is_binary_lang, "binary_lang",  
+	rlang::is_bytes, "bytes",  
+	rlang::is_call_stack, "call_stack",  
+	rlang::is_callable, "callable",  
+	rlang::is_character, "character",  
+	rlang::is_chr_na, "chr_na",  
+	rlang::is_closure, "closure",  
+	rlang::is_copyable, "copyable",  
+	rlang::is_cpl_na, "cpl_na",  
+	rlang::is_dbl_na, "dbl_na",  
+	rlang::is_definition, "definition",  
+	rlang::is_dictionary, "dictionary",  
+	rlang::is_dictionaryish, "dictionaryish",  
+	rlang::is_double, "double",  
+	rlang::is_empty, "empty",  
+	rlang::is_env, "env",  
+	rlang::is_eval_stack, "eval_stack",  
+	rlang::is_expr, "expr",  
+	rlang::is_false, "false",  
+	rlang::is_formula, "formula",  
+	rlang::is_formulaish, "formulaish",  
+	rlang::is_frame, "frame",  
+	rlang::is_function, "function",  
+	rlang::is_int_na, "int_na",  
+	rlang::is_integer, "integer",  
+	rlang::is_integerish, "integerish",  
+	rlang::is_lang, "language",  
+	rlang::is_lgl_na, "lgl_na",  
+	rlang::is_list, "list",  
+	rlang::is_logical, "logical",  
+	rlang::is_na, "na",  
+	rlang::is_named, "named",  
+	rlang::is_node, "node",  
+	rlang::is_null, "null",  
+	rlang::is_pairlist, "pairlist",  
+	rlang::is_primitive, "primitive",  
+	rlang::is_primitive_eager, "primitive_eager",  
+	rlang::is_primitive_lazy, "primitive_lazy",  
+	rlang::is_quosure, "quosure",  
+	rlang::is_quosureish, "quosureish",  
+	rlang::is_quosures, "quosures",  
+	rlang::is_raw, "raw",  
+	rlang::is_scalar_atomic, "scalar_atomic",  
+	rlang::is_scalar_bytes, "scalar_bytes",  
+	rlang::is_scalar_character, "scalar_character",  
+	rlang::is_scalar_double, "scalar_double",  
+	rlang::is_scalar_integer, "scalar_integer",  
+	rlang::is_scalar_integerish, "scalar_integerish",  
+	rlang::is_scalar_list, "scalar_list",  
+	rlang::is_scalar_logical, "scalar_logical",  
+	rlang::is_scalar_raw, "scalar_raw",  
+	rlang::is_scalar_vector, "scalar_vector",  
+	rlang::is_stack, "stack",  
+	rlang::is_string, "string",  
+	rlang::is_symbol, "symbol",  
+	rlang::is_symbolic, "symbolic",  
+	rlang::is_syntactic_literal, "syntactic_literal",  
+	rlang::is_true, "true",  
+	rlang::is_vector, "vector"  
+)  
+```
+
+The first column has an `is_` function that will be used to do a test. The
+second column has a string the is used if the result of the test is `TRUE`.
+
+### qtls_what_is_it Implementation
+
+The code that does the work is only a few lines:
+
+```{r what, eval=FALSE}
+qtls_what_is_it <- function(obj) {  
+	dplyr::select(is_functions, title) %>%  
+		dplyr::filter(purrr::map_lgl(is_functions$test, ~ .(obj))) %>%  
+		purrr::flatten_chr()  
+}
+```
+
+The code selects the `title` column of the table then filters it so that only
+the rows from the table with a successful test are used, then flattens it
+so that a character vector is returned.
+
+## qtls_make_rlang_model
+This is probably the key function for working with quosures because it gives
+you all the info about the object model of a quosure that you might need. It
+also illustrates at a low level how the object model accessed.
+
+It is a recursive function, that is at one point in the function it calls
+itself. The is how it traverses the tree of objects that make up the object
+model.
+
+It is broken up into four parts; initialization, processing, recursion, and
+test for completion.
+
+### Initialization
+
+Initialization setup up some things when the function is first called.
+
+Also the `e` argument that is passed in is an object from the object model
+that needs to be added to the table that will eventually be returned.
+
+```{r, eval=FALSE}
+qtls_make_rlang_model <- function(
+	e,
+	parent = 0L,
+	context = new.env() ,
+	order = 1L,
+	path = vector(mode = "integer")) {
+	# begin initialization
+	# table needs to be passed by reference to put into its own environment
+	if (is.null(context$tbl)) {
+		context$tbl <-
+			tibble::tribble(
+			)
+		# pass is incremented after each row is added to tbl
+		context$pass <- 1L
+		context$expr_id <- 0L
+	}
+	# end initialization
+```
+The main thing that is does is create an empty table that will progressively
+added in the recursive part of the function.
+
+One thing that is a little tricky here is how the table is managed. The table
+has to be passed into the function each time it is called. R's copy on write
+semantics can make it difficult to access the table after the final pass
+of the function.
+
+One way to fix this is to put the table into its own
+environment and pass the to the function instead. This, in effect, allows
+the table to be passed by reference rather than by value.
+
+Note that `pass` is initialized to 1L.
 
 
+### Processing
+
+The processing part of the function adds the object `e`, that was passed in to
+the function, to the table it is building.
 
 
+```{r processing, eval=FALSE}
+	# begin processing
+	# depth is useful when making an outline plot
+	depth <- length(path)
+	# this add a new row to the table that will be returned by qtls_make_rlang_model
+	context$tbl <- dplyr::bind_rows(
+		context$tbl,
+		tibble::tibble(
+			# context$pass is just a running number used for id, which must be a key
+			id = c(context$pass),
+			# parent of this object, see more below
+			parent = c(parent),
+			# this path can be used to locate object
+			path = list(path),
+			depth = c(depth),
+			# handy info about e
+			expr_type = c(typeof(e)),
+			# handy info about e
+			expr_class = c(stringr::str_c(class(e), collapse = ", ")),
+			# order in relation to other siblings. Insures that things like
+			# a - b are not interpreted as b - a
+			order = c(order),
+			# handy info about e
+			expr_text = rlang::expr_text(e),
+			# hand info about e. Useful for DiagrammeR plot
+			label = stringr::str_c(rlang::expr_text(e), "\n", order),
+			# handy info about what kinds of objects e mimics
+			what_is_expr = list(qtls_what_is_it(e)),
+		)
+	)
+	parent <- context$pass
+	context$pass <- context$pass + 1L
+	#end processing
+
+```
+
+It does this by creating a one row table and then uses `dplyr::bind_rows` to add
+that table, *i.e row, to the table
+
+Each time `qtls_make_rlang_model` the input object, `e` is used to make that
+one row table.
+
+The value of `pass` is used as the `id` of `e`. `pass` is incremented at the 
+end of the processing section.
+
+The parent column is set to the value of `parent` passed into the function. It
+is the id of the parent of `e`. This is used to represent the tree in a
+table.
+
+`path` is the integer vector that is the path to `e` and is built in the
+recursion section.
+
+The rest of the columns are pretty mundane but useful information. See
+the comments in the code for the details.
+
+`parent` is set to the `pass` while it is still the id of the the `e` being
+processed. It will be needed shortly.
+
+### Test For Completion
+
+A recursive function needs some kind of test for completions or it would
+recurse forever. 
+
+```{r completion, eval=FALSE}
+	# test for completion
+	if (length(e) > 1) {
+		#end test for completion
+```
+	
+The test is simple, when the object that was processed has not children the
+recursion ceases. 
+
+### Recursion
+	
+Recursion itself is straightforward, each of the children of the `e` are
+passed back into `qtls_make_rlang_model`
+	
+```{r recursion, eval=FALSE}
+
+		# begin recursion
+		# if length > 1 then object has children
+		# which are recursively processed
+		for (index in 1:length(e)) {
+			# add object to table
+			qtls_make_rlang_model(
+				e[[index]],
+				order = index,
+				context = context,
+				parent = parent,
+				path = c(path, index)
+			)
+		}
+		# end recursion
+```
+
+### Finish
+The finish of the function just returns the table it has build after adding a
+rowid column to it. This column isn't really necessary because the `id` column
+is already a key, but it is there *just in case*.
+
+```{r return, eval=FALSE}
+	# just in case add rowid column
+	tibble::rowid_to_column(context$tbl)
+
+
+```
