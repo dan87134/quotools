@@ -1,5 +1,6 @@
 
 
+
 #' Wrap the rlang object model for an object into a table.
 #' This is a recursive function
 #'
@@ -16,73 +17,70 @@
 #' @export
 #'
 #' @examples
-qtls_make_rlang_model <- function(
-	e,
-	parent = 0L,
-	context = new.env() ,
-	order = 1L,
-	path = vector(mode = "integer")) {
+qtls_make_rlang_model <- function(e,
+																	parent = 0L,
+																	context = new.env() ,
+																	order = 1L,
+																	path = vector(mode = "integer")) {
 	# begin initialization
 	# table needs to be passed by reference to put into its own environment
 	if (is.null(context$tbl)) {
 		context$tbl <-
-			tibble::tribble(
-			)
+			tibble::tribble()
 		# pass is incremented after each row is added to tbl
 		context$pass <- 1L
-		context$expr_id <- 0L
 	}
 	# end initialization
-	# depth is useful when making an outline plot
 	# begin processing
+	# depth is useful when making an outline plot
 	depth <- length(path)
 	# this add a new row to the table that will be returned by qtls_make_rlang_model
-	context$tbl <- dplyr::bind_rows(context$tbl, tibble::tibble(
-		# context$pass is just a running number used for id, which must be a key
-		id = c(context$pass),
-		# parent of this object, see more below
-		parent = c(parent),
-		# this path can be used to locate object
-		path = list(path),
-		depth = c(depth),
-		# handy info about e
-		expr_type = c(typeof(e)),
-		# handy info about e
-		expr_class = c(stringr::str_c(class(e), collapse = ", ")),
-		# order in relation to other siblings. Insures that things like
-		# a - b are not interpreted as b - a
-		order = c(order),
-		# handy info about e
-		expr_text = rlang::expr_text(e),
-		# hand info about e. Useful for DiagrammeR plot
-		label = stringr::str_c(rlang::expr_text(e), "\n", order),
-		# handy info about what kinds of objects e mimics
-		what_is_expr = list(qtls_what_is_it(e)),
+	context$tbl <- dplyr::bind_rows(
+		context$tbl,
+		tibble::tibble(
+			# context$pass is just a running number used for id, which must be a key
+			id = c(context$pass),
+			# parent of this object, see more below
+			parent = c(parent),
+			# this path can be used to locate object
+			path = list(path),
+			depth = c(depth),
+			# handy info about e
+			expr_type = c(typeof(e)),
+			# handy info about e
+			expr_class = c(stringr::str_c(class(e), collapse = ", ")),
+			# order in relation to other siblings. Insures that things like
+			# a - b are not interpreted as b - a
+			order = c(order),
+			# handy info about e
+			expr_text = rlang::expr_text(e),
+			# hand info about e. Useful for DiagrammeR plot
+			label = stringr::str_c(rlang::expr_text(e), "\n", order),
+			# handy info about what kinds of objects e mimics
+			what_is_expr = list(qtls_what_is_it(e)),
+		)
 	)
-	)
-	#end processing
-	# begin recursion
 	parent <- context$pass
 	context$pass <- context$pass + 1L
+	#end processing
 	# test for completion
 	if (length(e) > 1) {
+		#end test for completion
+		# begin recursion
 		# if length > 1 then object has children
 		# which are recursively processed
 		for (index in 1:length(e)) {
 			# add object to table
-			qtls_make_rlang_model(e[[index]], order = index,
-														context = context,
-														parent = parent,
-														path = c(path, index))
-
+			qtls_make_rlang_model(
+				e[[index]],
+				order = index,
+				context = context,
+				parent = parent,
+				path = c(path, index)
+			)
 		}
-
+		# end recursion
 	}
-	# end recursion
 	# just in case add rowid column
 	tibble::rowid_to_column(context$tbl)
 }
-
-
-
-

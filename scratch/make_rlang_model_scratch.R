@@ -61,6 +61,30 @@ tbl <- qtls_make_rlang_model(qa)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout="tree")
 
+s <- rlang::sym("a")
+q <- rlang::quo(s)
+qtls_what_is_it(s)
+
+rlang::quo(+p)
+
+
+
+q3 <- rlang::enquo(a + 1)
+tbl3 <- qtls_make_rlang_model(q3)
+QQ3 <- q3[[2:3]]
+
+rlang::new_quosure
+
+rlang::new_formula
+
+rlang::lang
+
+rlang:::rlang_interp
+
+
+qtls_what_is_it(QQ3)
+
+
 qtls_what_is_it(qa)
 
 l <- c("asdfasdf", "ooo")
