@@ -101,7 +101,10 @@ qtls_what_is_it(e)
 class(e)
 typeof(e)
 
-qf <- rlang::quo(function(x){x}(z))
+x <- function(z){z}(9)()
+x(8)
+
+qf <- rlang::quo(function(x){}(z)())
 tbl <- qtls_make_rlang_model(qf)
 g <- qtls_plot_model(tbl)
 DiagrammeR::render_graph(g, layout = "tree")
