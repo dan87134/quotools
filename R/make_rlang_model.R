@@ -9,7 +9,7 @@
 #' @param parent parent of expression (used by recursion only)
 #' @param context  environment used to pass table being constructed
 #'   by reference (used by recursion only)
-#' @param order position relative to siblings (used by recursion only)
+#' @param position position relative to siblings (used by recursion only)
 #' @param path path in e in object (used by recursion only)
 #'
 #' @return A table where each row has, among other things a path
@@ -20,7 +20,7 @@
 qtls_make_rlang_model <- function(e,
 																	parent = 0L,
 																	context = new.env() ,
-																	order = 1L,
+																	position = 1L,
 																	path = vector(mode = "integer")) {
 	# begin initialization
 	# table needs to be passed by reference to put into its own environment
@@ -49,13 +49,13 @@ qtls_make_rlang_model <- function(e,
 			expr_type = c(typeof(e)),
 			# handy info about e
 			expr_class = c(stringr::str_c(class(e), collapse = ", ")),
-			# order in relation to other siblings. Insures that things like
+			# position in relation to other siblings. Insures that things like
 			# a - b are not interpreted as b - a
-			order = c(order),
+			position = c(position),
 			# handy info about e
 			expr_text = rlang::expr_text(e),
 			# hand info about e. Useful for DiagrammeR plot
-			label = stringr::str_c(rlang::expr_text(e), "\n", order),
+			label = stringr::str_c(rlang::expr_text(e), "\n", id, ":", position),
 			# handy info about what kinds of objects e mimics
 			what_is_expr = list(qtls_what_is_it(e)),
 		)
@@ -73,7 +73,7 @@ qtls_make_rlang_model <- function(e,
 			# add object to table
 			qtls_make_rlang_model(
 				e[[index]],
-				order = index,
+				position = index,
 				context = context,
 				parent = parent,
 				path = c(path, index)

@@ -101,8 +101,10 @@ qtls_what_is_it(e)
 class(e)
 typeof(e)
 
-tbl <- qtls_make_rlang_model(1)
-l <- qtls_make_outline_plot(tbl, id, id, parent,  expr_type, expr_text, path)
+
+q <- rlang::quo(a + b + c)
+tbl <- qtls_make_rlang_model(q)
+l <- qtls_make_outline_plot(tbl, id, id, position, parent,  expr_type, expr_text, path)
 writeLines(l)
 A <-9
 tbl <- qtls_make_rlang_model(rlang::parse_expr("A + b"))
