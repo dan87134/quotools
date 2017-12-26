@@ -45,6 +45,10 @@ and 3.
 `+`(`+`(1, 2), 3)
 ```
 
+This is using the add function builtin to R. This function takes only two
+arguments. You have to nest the functions in order to add more than two
+arguments.
+
 It's unlikely you have ever done addition this way, it's just too clumsy 
 and strange looking compared to the way you learned to do addition in school.
 
@@ -57,15 +61,18 @@ Of course, in practice, you would do this sum as:
 1 + 2 + 3
 ```
 
-Now R doesn't use NSE to do this because the implementors of R we able to add
-arithmetic as a native syntax to R. The important take away from this example
-is that adding arithmetic syntax to R didn't add anything to it's computational
-capabilities, it just made it easier to use in the problem domain of
-doing arithmetic calculations.
+This familiar, arithmetic syntax works because under the covers R converts it 
+to nested `+` functions so that it can evaluate it. 
 
-Using quosures to *Program on the Language* lets you add
-custom syntaxes for arguments of functions without changing the implementation
-of R. This way you can make R easier to use in the problem domains you
+Now R doesn't use NSE to do this because the implementors of R we able to
+include arithmetic as a native syntax to R. But the important take away from
+this example is that including this arithmetic syntax in R didn't extend R's computational capabilities, it just made it easier to use it in the problem domain
+of doing arithmetic calculations.
+
+Using quosures to *Program on the Language* lets you do this too...
+but without
+changing the implementation of R, you just write ordinary functions that
+use quosues. This way you can make R easier to use in the problem domains you
 deal with.
 
 Now let's start looking at how all this works.
@@ -80,8 +87,8 @@ argument and pass TRUE to `f` if the value of the variable `weight` is less
 than 94 but otherwise pass FALSE to 'f'. This is called standard evaluation
 because that is the standard way R handles arguments in a function call.
 
-The `dplyr::filter` function evaluates the same syntax in a completly
-different way by using quosures and non-standard valuation.
+The `dplyr::filter` function is an NSE function and evaluates the same syntax
+in a completly different way by using quosures.
 
 ```{r simplefilter}
 suppressPackageStartupMessages(library(dplyr))
@@ -152,7 +159,7 @@ f1 <- function(expr) {
 f1(az + bz) 
 ```
 
-The error occurs because `'as.character` function uses R do a standard
+This error occurs because the `'as.character` function uses R do a standard
 evaluation of `expr` before it tries to process it. When R did that
 evaluation it couldn't find `az`. This is the way most functions in R work.  
 
@@ -188,9 +195,16 @@ are better ways access the information in the expression, which we'll see as
 this tutorial progresses.
 
 
-Another thing a quosure gives you access to is an object model for a quosure. In
-simple terms a quosure mimics a `list` that holds out
-the details of an expression. Here is an example that breaks out the operator 
+One of the key things a quosure gives you access to is an
+object model for a quosure. In simple terms an object model is a set of
+objects that represent the pieces of an expession.
+
+A quosure tranlates
+an expression into an object model. It, in effect, keeps all the pieces of the
+object model in a list... which itself might contain lists. We'll see later
+that this list of lists of lists... is a tree structure.
+
+Here is an example that breaks out the `+` operator 
 between `az` and `bz` from expr:
 
 ```{r obj1}
@@ -203,15 +217,18 @@ f4(az + bz)
 
 ```
 
-The `f1` function returned the `+` operator from the expression passed into it.
+The `f2` function returned the `+` operator from the expression passed into it 
+by accessing the list of lists of lists... in the quosure.
+
+We've glossed over the details of how or why `f4` works but we'll get to them as we go 
+through this tutorial.
 
 The use of a numeric vector in the subsetting of `q` might not be familiar.
 Later we'll see that this acts as a *path* to an object in a list used to represent
 a tree of objects. This path is the key to working with quosures.
 
-You can work with quosures without using a path but it is very tedious and error
-prone to do so. This tutorial won't be covering how to use quosures without
-a path.
+You can work with quosures without using a path but it is tedious and error
+prone to do so.
 
 The important thing illustrated here is that it is possible to break down an
 expression into the pieces that make it up. In programming this is called
@@ -304,7 +321,7 @@ But now for more details.
 
 ##Environments
 
-In most cases, quosures are one of the exceptions, when R sees an expression it
+In most cases, except for quosures, when R sees an expression it
 evaluates it and returns one or more numbers that represent the result of
 that evaluation. Keep in mind that a string is just a sequence of numbers and
 so is an image or a plot.
@@ -338,8 +355,7 @@ Before we go further and with only minimal of some of the functions
 in the code, let's look
 at some examples of quosures in
 action. These examples are only meant to show what can be accompished with
-quosures, the programming details of how this is done is covered later
-in the tutorial.
+quosures.
 
 ##Complexity Measure, Using Syntax
 
@@ -381,13 +397,13 @@ complexity((+ a b))
 ```
 
 As you can see our complexity function never even got to look at the lisp expression
-that was passed into it. That's because in this case R does when a function
+that was passed into it. That's because in this case what R does when a function
 is called is to check that each argument is allowed by the R language syntax.
-If one is not R doesn't go any further and just returns an error.
+If one isn't R doesn't go any further and just returns an error.
 
 ##Bizzaro World Arithmetic, Using Context
 
-In this example and the next we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
+In this example we implement Bizzarro World ( https://en.wikipedia.org/wiki/Bizarro_World ) arithmetic. In
 Bizzaro World add means subtract, multiple means divide and *vica versa*.
 
 In this example we will make use of the fact that a quosure includes an
@@ -398,7 +414,9 @@ function. And you change the environment of a quosure
 by using the `rlang::set_env` function.
 
 Changing the environment of a quosure is a little tricky because you can't
-just replace it in most cases. You have to, in effect, just add to it. 
+just replace it in most cases. You have to, in effect, just add to it. In
+most cases the environment used by a quosure ins't private to it, it is
+shared by the rest of the code in the script that is using the quosure.
 
 You can evaluate a quosure by using the `rlang::tidy_eval` function.
 
