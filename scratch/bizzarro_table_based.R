@@ -15,7 +15,7 @@ bizzarro_flip2 <- function(q, op_table) {
 	model <- qtls_make_rlang_table(q)
 	# this finds all the symbols in model that need to be flipped
 	symbols <-
-		dplyr::filter(model, expr_type == "symbol", expr_text %in% bizzarro_op$sym)
+		dplyr::filter(model, leaf, expr_text %in% bizzarro_op$sym)
 	# symbols are not processed, the expressions they came from are
 	ops <- dplyr::right_join(
 		dplyr::select(model, id, rowid), dplyr::select(symbols, rowid, id = parent),

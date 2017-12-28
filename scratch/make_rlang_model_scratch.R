@@ -46,10 +46,13 @@ flip_add(1 + 2 + 3)
 flip_add(1 + 2 * 3)
 
 
-q <- rlang::quo(a + b + c)
+q <- rlang::quo(a + b + c + d + e + f + g + h + j + k)
 tree_table <- qtls_make_rlang_model(q)
 g <- qtls_plot_model(tree_table)
 DiagrammeR::render_graph(g, layout = "tree")
+
+dplyr::select(tree_table, id, parent, position, expr_text)
+
 
 e <- rlang::parse_expr("1 + a")
 typeof(e)
@@ -103,6 +106,34 @@ typeof(e)
 
 x <- function(z){z}(9)()
 x(8)
+
+
+ql <- rlang::quo(some <- mtcars %>% split(.$cyl) %>% map(select, vars_keep) %>% map(cor))
+tbll <- qtls_make_rlang_model(ql)
+g <- qtls_plot_model(tbll)
+DiagrammeR::render_graph(g, layout="tree")
+
+ql <- rlang::quo(mtcars %>% split(.$cyl))
+tbll <- qtls_make_rlang_model(ql)
+g <- qtls_plot_model(tbll)
+DiagrammeR::render_graph(g, layout="tree")
+
+`$`
+
+
+ql <- rlang::quo(f1(select, vars_keep))
+tbll <- qtls_make_rlang_model(ql)
+g <- qtls_make_outline_plot(tbll)
+DiagrammeR::render_graph(g, layout="tree")
+
+length(ql)
+
+t <- ql[[2]]
+length(t)
+
+
+qt <- rlang::qup
+
 
 qf <- rlang::quo(function(x){}(z)())
 tbl <- qtls_make_rlang_model(qf)

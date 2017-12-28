@@ -5,7 +5,7 @@
 \title{Wrap the rlang object model for an object into a table.
 This is a recursive function}
 \usage{
-qtls_make_rlang_model(e, parent = 0L, context = new.env(), order = 1L,
+qtls_make_rlang_model(e, parent = 0L, context = new.env(), position = 1L,
   path = vector(mode = "integer"))
 }
 \arguments{
@@ -17,7 +17,7 @@ quosure (which mimics an expression)}
 \item{context}{environment used to pass table being constructed
 by reference (used by recursion only)}
 
-\item{order}{position relative to siblings (used by recursion only)}
+\item{position}{position relative to siblings (used by recursion only)}
 
 \item{path}{path in e in object (used by recursion only)}
 }

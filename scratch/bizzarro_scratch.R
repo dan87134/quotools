@@ -14,7 +14,7 @@ bizzarro_op <- tibble::tribble( ~ sym, ~ bizzarro_sym,
 # into the bizzarro world
 bizzarro_flip <- function(q) {
 	# extract the rlang model component of the quosure q
-	model <- qtls_make_rlang_table(q)
+	model <- qtls_make_rlang_model(q)
 	# walk through all the expressions in the model
 	purrr::walk(model$expression, function(expr) {
 		if (!rlang::is_atomic(expr)) {
@@ -43,5 +43,33 @@ barithmetic <- function(expr) {
 barithmetic(3 + 1)
 #yikes, that's bizzare!!!!
 barithmetic(3 * 4 + 1)
+
+#+++++++++++++++++++++++++++++++++
+
+flip_add <- function(expr) {
+	# make a quosure of expr
+	q <- rlang::enquo(expr)
+	# make a tree table of the object model of q
+	tree_table <- qtls_make_rlang_model(q)
+	# this finds all the + operators in the expression
+	plus_ops <- dplyr::filter(tree_table, leaf, position == 1, expr_text == "+")
+	# for this to work q has to be passed by reference
+	qenv <- new.env()
+	qenv$q <- q
+	# this changes all of them to -
+	purrr::walk(plus_ops$path, function(path) {
+		qenv$q[[path]] <- rlang::sym("-")})
+	# and this evaluates the modified expression
+	print(qenv$q)
+	rlang::eval_tidy(qenv$q)
+}
+
+a <- 1
+b <- 2
+c <- 3
+
+flip_add(a + b * c)
+flip_add(a + b + c)
+
 
 

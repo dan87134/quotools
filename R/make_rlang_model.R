@@ -34,6 +34,7 @@ qtls_make_rlang_model <- function(e,
 	# begin processing
 	# depth is useful when making an outline plot
 	depth <- length(path)
+	leaf <- length(e) == 1
 	# this add a new row to the table that will be returned by qtls_make_rlang_model
 	context$tbl <- dplyr::bind_rows(
 		context$tbl,
@@ -56,6 +57,7 @@ qtls_make_rlang_model <- function(e,
 			expr_text = rlang::expr_text(e),
 			# hand info about e. Useful for DiagrammeR plot
 			label = stringr::str_c(rlang::expr_text(e), "\n", id, ":", position),
+			leaf = c(leaf),
 			# handy info about what kinds of objects e mimics
 			what_is_expr = list(qtls_what_is_it(e)),
 		)
