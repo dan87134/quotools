@@ -64,6 +64,10 @@ flip_add <- function(expr) {
 	rlang::eval_tidy(qenv$q)
 }
 
+`-`(8)
+`+`
+
+
 a <- 1
 b <- 2
 c <- 3

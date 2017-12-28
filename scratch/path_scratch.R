@@ -4,12 +4,19 @@ a[[1]]
 a[2] <- 3
 a[5] <- 5
 
+`+`(9, 1, 2)
 
 pryr::address(a)
 
 q <- rlang::quo(a + b + c)
 pryr::address(q)
 
+node4 <- q[c(2,1)]
+node4
+q[[c(1,1)]]
+
+is.leaf(node4)
+dnode4 <- as.dendrogram(node4)
 q2 <- q
 
 q[[c(2,2)]] <- rlang::sym("aa")
