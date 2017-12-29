@@ -8,6 +8,25 @@ a[5] <- 5
 
 pryr::address(a)
 
+nm <- 1:10
+# get it address
+pryr::address(nm)
+# now change a location in it
+nm[[2]] <- -2
+pryr::address(nm)
+
+
+
+
+a <- 9
+a <- 10
+
+q <- rlang::quo(a + b + c)
+obj1 <- q[[2]]
+obj2 <- obj1[[1]]
+obj2
+
+
 q <- rlang::quo(a + b + c)
 pryr::address(q)
 

@@ -11,6 +11,172 @@ qtls_what_is_it(rhsa)
 typeof(rhsa)
 rlang::node_car(rhsa)
 
+`+`(1,`+`(2, `+`(3, `+`(4, 5))))
+
+a <- 1
+b <- 2
+q <- rlang::quo(a + b)
+`!!`(q)
+
+identity(!!!q)
+
+f <- function(expr) {
+	rlang::enquo(expr)
+}
+
+get_arith_ops <- function(expr) {
+	rlang::enquo(expr) %>%
+		qtls_make_rlang_model() %>%
+		dplyr::filter(position == 1, expr_text %in% c("+", "-", "*", "/"))
+}
+q <- rlang::quo(a + b * c)
+get_arith_ops(!!q)
+
+identity(!!(q))
+UQE
+
+q
+rlang::quo(!! q)
+f <- function(x) { x}
+f(!!q)
+
+f3 <- function(...) {
+	tbl <- tibble::tribble (
+		~x, ~y, ~z,
+		1,2,3,
+		4,5,6
+	)
+	dplyr::select(tbl, ...)
+}
+
+tbl <- tibble::tribble (
+	~x, ~y, ~z,
+	1,2,3,
+	4,5,6
+)
+
+dplyr::select(tbl, x, z)
+
+columns <- list("x", "z")
+
+dplyr::select(tbl, !!! columns)
+
+
+f3(x,z)
+
+columns <- list("x", "z")
+
+f3(!!! columns)
+
+
+
+f4 <- function(cols) {
+	qs <- quos(cls)
+	tbl <- tibble::tribble (
+		~x, ~y, ~z,
+		1,2,3,
+		4,5,6
+	)
+	dplyr::select(tbl, !!!qs)
+}
+
+f4(list("x", "y"))
+
+# tribble built with text column names
+q <- list(call("~", "a"), call("~", "b"), 1, 2, 3, 4)
+
+q3 <- rlang::quo(tibble::tribble(rlang::UQS(q)))
+
+rlang::eval_tidy(q3)
+
+
+
+
+
+t1 <- tibble::as_tibble(list(a="asdf", b=3, c=5))
+
+t2 <- tibble::as_tibble(list(a="eeg", b=7, c=6))
+
+l11 <- list(t1, t2)
+
+dplyr::bind_rows(!!!l11)
+
+dplyr::bind_rows(!!! l11)
+
+
+
+f3(x,y)
+
+rlang::quos(c(x,y))
+f3(c(x, y))
+
+qs <- quos(list("x", "y"))
+
+
+#try it out here
+expr <- rlang::get_expr(q)
+get_arith_ops(UQE(q))
+UQ
+identity
+
+args <- list(1:10, na.rm = TRUE)
+quo(mean( !!!args ))
+
+
+
+f5 <- function(q) {
+	rlang::get_expr(q)
+}
+
+
+q2 <- rlang::quo(expr)
+
+
+`!!`(3)
+
+!!(q)
+
+`!!!`
+
+
+qtls_what_is_it(q)
+
+ f(!!q)
+
+ f2 <- function(...) {
+ 	q <- rlang::quos(...)
+ 	f3(!!!(q))
+ }
+
+  f3(1, 2, 3)
+
+ f3 <- function(...) { sum(...)}
+
+
+get_arith_ops <- function(expr) {
+
+}
+
+
+get_ops <- function(expr) {
+	ops <- rlang::enquo(expr) %>%
+		qtls_make_rlang_model() %>%
+		dplyr::filter(position == 1, expr_text %in% c("+", "-", "*", "/"))
+}
+nrow(get_ops(a + b - c * d))
+
+
+get_ops <- function(expr) {
+	q <- rlang::enquo(expr)
+	ops <- q %>%
+		qtls_make_rlang_model() %>%
+		dplyr::filter(position == 1, expr_text %in% c("+", "-", "*", "/"))
+}
+nrow(get_ops(a + b - c * d))
+
+
+
+
 
 qa <- rlang::quo("a")
 rhsa <- rlang::f_rhs(qa)

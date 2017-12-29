@@ -60,8 +60,8 @@ Of course, in practice, you could do this sum as:
 identity(1 + 2 + 3)
 ```
 
-R doesn't actually know what to do with `1 + 2 + 3` as is. It has translate to
-something is does know about, nested `+` functions.
+R doesn't actually know what to do with `1 + 2 + 3` as is. It has translate it
+to something is does know about, the nested `+` functions in the first example.
 
 R could use NSE to do this traslation but it doesn't. That's because the
 implementors of R we able to include this familiar arithmetic syntax as a
@@ -117,8 +117,7 @@ tbl[tbl["weight"] < 94 & tbl["length"] > 12, ]
 
 and you get the same result.
 
-But the R syntax for chosing rows  
-has more of what is sometimes called *programming ceremony*
+But the R syntax for chosing rows has more of what is sometimes called *programming ceremony*
 than the `dplyr::filter` syntax. Programming ceremony is the text you need
 to add to an expression that has little to do with telling R what you
 want to do.
@@ -127,7 +126,7 @@ In the R standard evaluation example the
 programing ceremony is `tbl` repeated three times, the quotes and square
 brackets and even that one *dangling* comma. All of those things are necessary
 to get the R to choose the rows you want but do nothing to clarify what
-you want the R to do.
+you want R to do.
 
 `dplyr::filter` has a syntax with much less ceremony and that is arguably more
 straightforward to use. It is also reminiscent of the syntax that SQL
@@ -804,9 +803,300 @@ bizzarro_flip did a lot of work but you should be able see how it did it's work
 from the comments it. Just about everything it did was done with fairly
 ordinary code for working with tables. 
 
+##Trees and Paths and Immutable Objects
+
+We've seen in the preceding examples that a quosure is a tree of objects that
+represents an expression. We've also seen that the tree itself is lists of lists
+that we can explore by using subsetting, for example we can access one of the
+`+` operators in `a + b + c` using subsetting like this:
+
+```{r subset1}
+q <- rlang::quo(a + b + c)
+obj1 <- q[[2]]
+obj2 <- obj1[[1]]
+obj2
+
+```
+
+But we also talked about how using a path is a convienient way to access
+objects in the object model like:
+
+```{r path3}
+q <- rlang::quo(a + b + c)
+obj2 <- q[[c(2,1)]]
+obj2
+```
+
+Both of these ways of accessing a `+` operator in `a + b + c` seem to be equivalent
+but they are not. Using a path is necessary if you are going to modify a quosure
+as we did when we implemented Bizzarro World arithmetic. We can see that here...
+
+```{r path4}
+q <- rlang::quo(a + b + c)
+obj1 <- q[[2]]
+obj2 <- obj1[[1]]
+obj2 <- rlang::sym("-")
+q
+
+```
+
+... that sequentually getting object after object using subsetting
+did not change q.
+But...
+
+```{r path5}
+q <- rlang::quo(a + b + c)
+q[[c(2,1)]] <- rlang::sym("-")
+q
+```
+... using a path did.
+
+This isn't due to some quirk in the way quosures work. It's due to a fundamental
+property of R, objects are immutable. That means that once you set the
+value of an object you can't change it.
+
+You might question this property though because the following seems to work just 
+fine.
+
+```{r immute1}
+a <- 9
+a
+a <- 10
+a
+
+```
+
+It sure seems like we *changed* the value of `a`, but in fact we
+didn't. We'll see that shortly.
+
+Often the `<-` operator is sometimes called the assignment operator
+and the expression `a <- 9` is sometimes spoken as "9 is assigned
+to a".
+
+A better way to say what `a <- 9` does is "create a new variable named
+'a' and initialize its value to 9."
+
+By looking at some of the innards of R we can see that `<-` creates a 
+new object:
+
+```{r immut3}
+a <- 9
+pryr::address(a)
+a <- 10
+pryr::address(a)
+
+```
+
+`pryr::address` returns the memory location of an object. Look closely and you
+will see that the address of `a` changed when `10` was *assigned* to it. The
+address changed because `<-` created a new object for `a`.
+
+This immutable property is true even when subsetting is involved.
+
+```{r immut4}
+# make a numeric vector with 10 elements in it
+nm <- 1:10
+# get it address
+pryr::address(nm)
+# now change a location in the vector
+nm[2] <- -2
+## and get it's address again
+pryr::address(nm)
+# and nm has moved
+```
+
+So with our new description of what the `<-` operator does lets look at the
+example we started with and the addresses involved.
+
+```{r path9}
+# make a new object named q and initialize it with a quosure
+q <- rlang::quo(a + b + c)
+pryr::address(q)
+# make a new object named obj1 and initialize it with the content of q[[2]]
+obj1 <- q[[2]]
+# make a new object named obj2 and initialize it with the content of obj1[[1]]
+obj2 <- obj1[[1]]
+# make a new object named obj2 and initialize it with a symbol
+obj2 <- rlang::sym("-")
+# So we didn't  change q, we just created a new objects.
+# So the fact that q didn't change should be expected.
+pryr::address(q)
+q
+```
+
+A good clue that we didn't change `q` is that it's address after 
+`obj2 <- rlang::sym("-")` is the same as it was at the beginning
+of the script. If `q` had been changed it would have had a 
+different address.
+
+Now lets do the same thing with the example that uses a path.
+
+```{r path7}
+# make a new object named q and initialize it with a quosure
+q <- rlang::quo(a + b + c)
+pryr::address(q)
+# make a new object named `q` that is the same as the current object
+# named `q` but with a different conent
+q[[c(2,1)]] <- rlang::sym("-")
+pryr::address(q)
+q
+```
+
+In this example the address of `q` did change. So we ended up with a brand
+new quosure but its object model is slightly different than the one we
+started with, that's why it contains the `-` we wanted it to.
+
+Just using a path to access the object we want to change isn't the only
+requirement to modify a quosure. The subsetting has to be done on the left
+hand side of the `<-` operator. Here is what happens if you try to do things
+on the right hand side:
+
+```{r path10}
+# make a new object named q and initialize it with a quosure
+q <- rlang::quo(a + b + c)
+pryr::address(q)
+# make a new object named obj and initialize it with q[[c(2,1)]]
+obj <- q[[c(2,1)]]
+# make a new object named obj and initialize it as a symbol
+obj <- rlang::sym("-")
+pryr::address(q)
+q
+```
+
+Here we can see that changing `obj` did not change the address of `q` nor did
+it change the content of `q`. That is because using a path on the right
+hand side of `<-` just created a new object that was not part of `q'.
+
+So in order to change a part of the object model of a quosure with subsetting
+you have to use a selector with a path in it on the right hand side of
+a `<-` operator.
+
+## Unwrappping Quosures
+Once you start working with quosures you will run into problems where you
+have a quosure but you need an expression. Here is an example:
+
+```{r unwrap1}
+# function that returns the arithmetic ops of an expression
+get_arith_ops <- function(expr) {
+rlang::enquo(expr) %>%
+		qtls_make_rlang_model() %>%
+		dplyr::filter(position == 1, expr_text %in% c("+", "-", "*", "/"))
+}
+#try it out here
+get_arith_ops(a + b * c)
+```
+
+You can see that our `get_arith_ops` worked with a literal expression passed
+into it.
+
+But what if instead of a actual expression what you have is quosure? 
+
+```{r unwrap2}
+# function that returns the arithmetic ops of an expression
+q <- rlang::quo(a + b * c)
+#try it out here
+get_arith_ops(q)
+```
+
+As you can see you can't just pass the quosure into `get_arith_ops`. What you
+need is the expression from the quosure q.
+
+This is the problem that *unwrapping* solves. A special operator `!!` unwraps
+an expression. This operator is sometimes called the double bang operator.
+
+```{r unwrap3}
+# function that returns the arithmetic ops of an expression
+q <- rlang::quo(a + b * c)
+#try it out here
+get_arith_ops(!! q)
+```
+And this works because `!! q` passed in the expression from `q` not `q` itself.
+
+But we already know how to get an expression from a quosure, that's what the 
+rlang::get_expr does for us. But that won't work
+
+```{r unwrap4}
+# function that returns the arithmetic ops of an expression
+q <- rlang::quo(a + b * c)
+#try it out here
+get_arith_ops(rlang::get_expr(q))
+```
+
+That didn't work because the first thing that `get_arith_ops` does is 
+`rlang::enquo` what was passed into it, so what it did, in effect, was
+`rlang::enquo(rlang::get_expr(q))', that is it quoted the expression
+that was passed into it. That's why `!!` is special, it doesn't get
+quoted, the expression inside `q` is quoted.
+
+`!!` is also special because it only works on arguments of functions that 
+get passed into a function that creates a quosure. So R won't be able to 
+process something like:
+
+```{r wrap8, error=TRUE}
+q <- rlang::quo(a + b * c)
+!! q
+```
+
+There is another kind of unwarping problem you can run into.
+
+`dplyr::select` is an NSE function. You pass into it
+columns you want to select and possibly rename. Here is an example:
+
+```{r wrap10}
+tbl <- tibble::tribble (
+	~x, ~y, ~z,
+	1,2,3,
+	4,5,6
+)
+dplyr::select(tbl, ex = x, y)
+```
+
+But it's quite possible that you may, as part of your applications, create a
+list of names of columns, for example you might get them from user input. For
+example your application might create a list like this:
+
+```{r wrap11}
+columns <- list(ex = "x", "z")
+```
+
+You can't pass this list into `dplyr::select` ...
+
+```{r wrap12, error=TRUE}
+dplyr::select(tbl, columns)
+```
+
+The is another quoting operator that can, in effect, turn a list like this into
+a literal, comma separated list if values. The is will work only for an NSE
+function that has `...` as one its arguments. A quick check of `dplyr::select`
+shows that that is the case
+
+>Usage
+
+>select(.data, ...)
+
+That operator is the `!!!` operator, sometimes called the tripple bang operator.
+It's used like this:
+
+```{r wrap13}
+columns <- list(ex = "x", "z")
+
+dplyr::select(tbl, !!! columns)
+
+```
+
+And we see that we got the results we wanted, including the renaming of
+the column.
+
+This works because somewhere inside the `dplyr::select` function it uses
+`rlang::quos(...)` to make a quosure out of the `...` argument. The `!!!`
+operator makes `rlang::quos` turn the list in to, in effect, a literal,
+comma separated list of arguments and then makes a quosure out of that.
+
+
 # Quosure Tools
 
-The code for the qstl_ functions used in this tutorial is available at https://github.com/dan87134/quotools.git. 
+The code for the qstl_ functions used in this tutorial is available at 
+https://github.com/dan87134/exquotools.git. 
 
 Note that this code is just for tutorial purposes and should not be used in
 production. It is not tested or supported in any way.
