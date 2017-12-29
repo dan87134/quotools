@@ -548,7 +548,7 @@ that column will contain "+".
 
 Now we can use our knowledge of tables to change all the `+` operators in
 an expression to `-` operators. This example uses the `path` column of the
-tree table. That's something we'll cover in detail shortly.
+tree table. That's something we'll cover in detail later.
 
 ```{r op1}
 flip_add <- function(expr) {
@@ -638,13 +638,13 @@ by nodes 6, 7 and 8.
 One of the things you will often need to do when you are *programming on the
 langauge* is to access one of the nodes in tree table. There are a number of
 ways to do this, earlier we saw subsetting being used to traverse the content
-of a quosure. In practice, though, you will be using what is called a path to do
+of a quosure. In practice, though, you will be using what is called a path to
 select nodes from a quosure. 
 
 A path is just a sequence of the node `position`'s (not `id`'s) you go through 
 from node 1 to the node you want to access. 
 For example the path to node 4 is `c(2,1)`. You can see this in the numbers
-to the left of the colon in the nodes along the way to node 4.
+to the right of the colon in the nodes along the way to node 4.
 
 ![](../figures/pathto4.png)
 
@@ -663,7 +663,7 @@ And, as expected that path is c(2,1).
 
 The we can use this path to access node 4.
 ```{r node_access}
-# note that the argument to [[ is an integer vector
+# note that the argument to [[ is an numeric vector
 node4 <- q[[path_to_4]]
 node4
 ```
@@ -721,7 +721,8 @@ outline <- qtls_make_outline_plot(tree_table, id, id, expr_text, expr_class, exp
 writeLines(outline)
 
 ```
-
+Here you can see that you can use an outline tree to get specific and detailed
+information about the objects in the object model of a quosure.
 Let's review what we've just looked at here.
 
 A quosure contains an object model and an environment for evaluating that
@@ -730,7 +731,7 @@ by using subsetting but that can be tedious
 and leads to code that will really be hard to debug or reason about.
 
 An object in the object model of a quosure can be accessed by using subsetting 
-with numeric vector.
+with a numeric vector.
 
 A table can represent a tree by having id and parent columns to hold the tree.
 The rest of the columns can hold information about the objects in the tree, for
